@@ -155,7 +155,7 @@
                             </div>
                             <button id="addSelectedBtn" class="btn btn-outline" style="width:100%;"><i class="fas fa-plus-circle"></i> Add selected</button>
                         </div>
-                        <div class="card"><div class="card-title">Items</div><div class="overflow-x-auto"><table class="items-table"><thead><tr><th>#</th><th>Product</th><th>Qty</th><th>Price</th><th>Total</th><th></th></tr></thead><tbody id="itemsBody"></tbody></tr></div></div>
+                        <div class="card"><div class="card-title">Items</div><div class="overflow-x-auto"><table class="items-table"><thead><tr><th>#</th><th>Product</th><th>Qty</th><th>Price</th><th>Total</th><th></th></td></thead><tbody id="itemsBody"></tbody></tr></div></div>
                     </div>
                     <div class="summary-card">
                         <div class="card-title">Order summary</div>
@@ -236,9 +236,9 @@
 
 <script>
     // ==================== CONFIGURATION ====================
-    // ⚠️ REPLACE WITH YOUR ACTUAL APPS SCRIPT DEPLOYMENT URL (the full URL)
-    // Example: const API_URL = 'https://script.google.com/macros/s/AKfycb.../exec';
-    const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID_HERE/exec';
+    // ⚠️ REPLACE THIS WITH YOUR ACTUAL APPS SCRIPT DEPLOYMENT ID
+    const SCRIPT_ID = 'YOUR_DEPLOYMENT_ID_HERE';   // Example: 'AKfycbxF2THa3v4TJKd2SebE...'
+    const API_URL = `https://script.google.com/macros/s/${SCRIPT_ID}/exec`;
     const API_SECRET = 'UAN_STORE_SECRET_2026';
     let currentChart = null;
     let products = [], currentItems = [], scanner = null, settings = { currency: '৳', taxRate: 0, nextInvoiceNum: 1 };
@@ -246,19 +246,20 @@
     let inventoryScanner = null;
     let selectedProductSuggestion = null;
 
-    // ==================== API HELPER (direct fetch, no proxy) ====================
+    // ==================== API HELPER ====================
     async function api(action, data = {}) {
         const payload = JSON.stringify({ action, secret: API_SECRET, ...data });
         const url = `${API_URL}?request=${encodeURIComponent(payload)}`;
         const res = await fetch(url);
         const text = await res.text();
+        // Try to parse JSON; if fails, throw error with response preview
         try {
             const json = JSON.parse(text);
             if (!json.success) throw new Error(json.error);
             return json.data;
         } catch(e) {
-            console.error('Response:', text.substring(0, 300));
-            throw new Error(`Server error: ${text.substring(0, 100)}`);
+            console.error('Raw response:', text.substring(0, 500));
+            throw new Error(`Server returned invalid JSON. Check Apps Script deployment (must be "Anyone"). Response starts with: ${text.substring(0, 100)}`);
         }
     }
 
@@ -301,7 +302,7 @@
         } catch(e) { toast(e.message, 'error'); }
     }
 
-    // ==================== AUTOCOMPLETE (fixed) ====================
+    // ==================== AUTOCOMPLETE ====================
     function updateProductSuggestions() {
         const input = document.getElementById('productSearchInput');
         const suggestionsDiv = document.getElementById('productSuggestions');
@@ -370,18 +371,18 @@
         const tbody = document.getElementById('itemsBody');
         if (!tbody) return;
         if (currentItems.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:1rem;">No items added</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:1rem;">No items added<\/td><\/tr>';
             recalcTotals();
             return;
         }
         tbody.innerHTML = currentItems.map((item, idx) => `
             <tr data-idx="${idx}">
-                <td>${idx+1}</td>
-                <td><strong>${item.name}</strong><br><span style="font-size:0.7rem;">${item.barcode}</span></td>
-                <td><div class="qty-control"><button class="qty-btn" data-idx="${idx}" data-delta="-1">-</button><input type="number" class="qty-input" data-idx="${idx}" value="${item.qty}" min="1" step="1" style="width:55px; text-align:center;"><button class="qty-btn" data-idx="${idx}" data-delta="1">+</button></div></td>
-                <td>${settings.currency}${item.price}</td>
-                <td>${settings.currency}${(item.price * item.qty).toFixed(2)}</td>
-                <td><button class="delete-item" data-idx="${idx}"><i class="fas fa-trash-alt"></i></button></td>
+                <td>${idx+1}侧
+                <td><strong>${item.name}</strong><br><span style="font-size:0.7rem;">${item.barcode}</span>侧
+                <td><div class="qty-control"><button class="qty-btn" data-idx="${idx}" data-delta="-1">-</button><input type="number" class="qty-input" data-idx="${idx}" value="${item.qty}" min="1" step="1" style="width:55px; text-align:center;"><button class="qty-btn" data-idx="${idx}" data-delta="1">+</button></div>侧
+                <td>${settings.currency}${item.price}侧
+                <td>${settings.currency}${(item.price * item.qty).toFixed(2)}侧
+                <td><button class="delete-item" data-idx="${idx}"><i class="fas fa-trash-alt"></i></button>侧
             </tr>
         `).join('');
         document.querySelectorAll('.qty-btn').forEach(btn => btn.onclick = () => {
@@ -442,7 +443,7 @@
         return w(n);
     }
 
-    // ==================== SCANNER for INVOICE ====================
+    // ==================== SCANNER ====================
     async function startScanner() {
         if (scanner) await stopScanner();
         const container = document.getElementById('scannerContainer');
@@ -492,7 +493,12 @@
             const invoices = await api('getInvoices', { limit: 100 });
             const tbody = document.getElementById('historyTbody');
             tbody.innerHTML = invoices.map(i => `
-                <td>${i.invoiceId}侧<td>${i.date}侧<td>${i.customerName}侧<td>${settings.currency}${i.total}侧<td>${i.worker || '-'}侧<td><button class="printHistoryBtn btn btn-outline text-xs" data-id="${i.invoiceId}">Print</button>侧
+                <td>${i.invoiceId}侧
+                <td>${i.date}侧
+                <td>${i.customerName}侧
+                <td>${settings.currency}${i.total}侧
+                <td>${i.worker || '-'}侧
+                <td><button class="printHistoryBtn btn btn-outline text-xs" data-id="${i.invoiceId}">Print</button>侧
             `).join('');
             document.querySelectorAll('.printHistoryBtn').forEach(btn => btn.onclick = () => printInvoiceById(btn.dataset.id));
         } catch(e) { toast(e.message, 'error'); }
@@ -503,9 +509,17 @@
             const stats = await api('getWorkerStats');
             const tbody = document.getElementById('workersTbody');
             tbody.innerHTML = stats.map(w => `
-                <tr><td>${w.name}</td><td>${w.role}</td><td>${w.invoiceCount}</td><td>${settings.currency}${w.totalSales.toFixed(2)}</td><td>${w.status}</td>
-                <td><button class="editWorkerBtn btn btn-outline text-xs" data-name="${w.name}" data-role="${w.role}" data-status="${w.status}">Edit</button>
-                <button class="deleteWorkerBtn btn btn-danger text-xs" data-name="${w.name}">Delete</button></td>
+                <tr>
+                    <td>${w.name}侧
+                    <td>${w.role}侧
+                    <td>${w.invoiceCount}侧
+                    <td>${settings.currency}${w.totalSales.toFixed(2)}侧
+                    <td>${w.status}侧
+                    <td>
+                        <button class="editWorkerBtn btn btn-outline text-xs" data-name="${w.name}" data-role="${w.role}" data-status="${w.status}">Edit</button>
+                        <button class="deleteWorkerBtn btn btn-danger text-xs" data-name="${w.name}">Delete</button>
+                    侧
+                </tr>
             `).join('');
             document.querySelectorAll('.editWorkerBtn').forEach(btn => {
                 btn.onclick = () => {
@@ -588,12 +602,11 @@
                 statusDiv.innerHTML = '<span style="color: #ef4444;">❌ Unexpected response.</span>';
             }
         } catch(e) {
-            statusDiv.innerHTML = `<span style="color: #ef4444;">❌ Failed: ${e.message}. Check Apps Script deployment (must be "Anyone").</span>`;
+            statusDiv.innerHTML = `<span style="color: #ef4444;">❌ Failed: ${e.message}. Check Apps Script deployment (must be "Anyone") and URL.</span>`;
             toast('Connection failed', 'error');
         }
     }
 
-    // ==================== INVOICE SAVE & PRINT ====================
     async function loadCustomerByPhone(phone) {
         if (!phone || phone.length < 5) return;
         try {
@@ -662,7 +675,11 @@
                 <div><h2>${s.storeName}</h2><p>${s.storeAddress || ''}</p><hr>
                 <p>Invoice: ${inv.invoiceId}<br>Date: ${inv.date}<br>Customer: ${inv.customerName}<br>Worker: ${inv.worker || '-'}</p>
                 <table border="1" style="width:100%;border-collapse:collapse;"><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>
-                ${inv.items.map(it => `<td>${it.name}侧<td>${it.qty}侧<td>${s.currency}${it.price}侧<td>${s.currency}${it.qty*it.price}侧</tr>`).join('')}
+                ${inv.items.map(it => `<td>${it.name}侧
+                <td>${it.qty}侧
+                <td>${s.currency}${it.price}侧
+                <td>${s.currency}${it.qty*it.price}侧
+              ``).join('')}
                 </tbody></table>
                 <p>Subtotal: ${s.currency}${inv.subtotal}<br>Discount: ${s.currency}${inv.discount}<br>Tax: ${s.currency}${inv.tax}<br><strong>Total: ${s.currency}${inv.total}</strong></p>
                 <p>${s.thankYouMsg}</p></div></body></html>
@@ -777,7 +794,6 @@
         } catch(e) { toast(e.message, 'error'); }
     }
 
-    // ==================== INVENTORY SCANNER ====================
     async function startInventoryScanner() {
         if (inventoryScanner) await stopInventoryScanner();
         const modal = document.createElement('div');
@@ -856,12 +872,14 @@
     window.addEventListener('beforeunload', () => stopScanner());
 
     const searchInput = document.getElementById('productSearchInput');
-    searchInput.addEventListener('input', updateProductSuggestions);
-    searchInput.addEventListener('blur', () => setTimeout(() => {
-        const sug = document.getElementById('productSuggestions');
-        if (sug) sug.classList.add('hidden');
-    }, 200));
-    attachSuggestionClick();
+    if (searchInput) {
+        searchInput.addEventListener('input', updateProductSuggestions);
+        searchInput.addEventListener('blur', () => setTimeout(() => {
+            const sug = document.getElementById('productSuggestions');
+            if (sug) sug.classList.add('hidden');
+        }, 200));
+        attachSuggestionClick();
+    }
 
     document.getElementById('addWorkerBtn').onclick = async () => {
         const name = document.getElementById('newWorkerName').value.trim();
