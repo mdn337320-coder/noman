@@ -3,532 +3,381 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-    <title>UAN Store – Complete System</title>
+    <title>UAN Store – Invoice Test</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #f1f5f9; font-family: 'Inter', system-ui, sans-serif; }
-        :root {
-            --primary: #4f46e5; --primary-dark: #4338ca; --secondary: #10b981; --danger: #ef4444;
-            --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb; --gray-600: #4b5563; --gray-800: #1f2937;
-            --sidebar: #0f172a; --radius-xl: 1.5rem; --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-        }
-        .app { display: flex; min-height: 100vh; }
-        .sidebar { width: 280px; background: var(--sidebar); padding: 2rem 1.25rem; position: sticky; top: 0; height: 100vh; overflow-y: auto; border-right: 1px solid rgba(255,255,255,0.1); }
-        .logo-area h2 { font-size: 1.75rem; font-weight: 700; background: linear-gradient(135deg, #fff, #a5b4fc); -webkit-background-clip: text; background-clip: text; color: transparent; }
-        .logo-area p { font-size: 0.7rem; color: #9ca3af; margin-top: 0.25rem; }
-        .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: 0.75rem; color: #cbd5e1; transition: all 0.2s; font-weight: 500; cursor: pointer; }
-        .nav-item i { width: 1.5rem; }
-        .nav-item:hover { background: rgba(255,255,255,0.1); color: white; transform: translateX(4px); }
-        .nav-item.active { background: var(--primary); color: white; }
-        .main { flex: 1; padding: 2rem 2.5rem; max-width: calc(100% - 280px); }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
-        .page-title { font-size: 2rem; font-weight: 700; background: linear-gradient(135deg, var(--gray-800), var(--primary-dark)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-        .worker-select { background: white; border: 1px solid var(--gray-200); border-radius: 2rem; padding: 0.5rem 1rem; font-size: 0.875rem; cursor: pointer; }
-        .card { background: white; border-radius: var(--radius-xl); padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-md); transition: all 0.2s; }
-        .card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px -5px rgba(0,0,0,0.15); }
-        .card-title { font-weight: 600; margin-bottom: 1.25rem; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; border-left: 3px solid var(--primary); padding-left: 0.75rem; }
-        .form-group { margin-bottom: 1rem; }
-        label { font-size: 0.7rem; text-transform: uppercase; font-weight: 600; color: var(--gray-600); display: block; margin-bottom: 0.25rem; }
-        input, select, textarea { width: 100%; padding: 0.7rem 0.9rem; border: 1px solid var(--gray-200); border-radius: 0.75rem; font-size: 0.9rem; background: white; }
-        input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
-        .btn { padding: 0.75rem 1.25rem; border-radius: 2rem; font-weight: 600; cursor: pointer; border: none; display: inline-block; }
-        .btn-primary { background: linear-gradient(135deg, var(--secondary), #059669); color: white; }
-        .btn-outline { background: transparent; border: 1px solid var(--gray-300); color: var(--gray-700); }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-        .stat-card { background: white; border-radius: var(--radius-xl); padding: 1.25rem; box-shadow: var(--shadow-md); text-align: center; }
-        .stat-number { font-size: 2rem; font-weight: 700; color: var(--primary-dark); }
-        .products-table, .items-table, .workers-table { width: 100%; border-collapse: collapse; }
-        .products-table th, .products-table td, .items-table th, .items-table td, .workers-table th, .workers-table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--gray-200); }
-        .products-table th { background: var(--gray-50); font-weight: 600; }
-        .toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(1rem); background: var(--gray-900); color: white; padding: 0.75rem 1.5rem; border-radius: 2rem; font-size: 0.85rem; z-index: 9999; opacity: 0; transition: all 0.2s; pointer-events: none; }
-        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-        .toast.error { background: var(--danger); }
-        .toast.success { background: #059669; }
-        .tab-content { display: block; animation: fadeSlideUp 0.3s ease-out; }
-        .tab-content.hidden { display: none; }
-        @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        .invoice-grid { display: grid; grid-template-columns: 1fr 380px; gap: 2rem; }
-        .qty-control { display: flex; align-items: center; gap: 0.5rem; }
-        .qty-btn { width: 28px; height: 28px; border-radius: 2rem; background: white; border: 1px solid var(--gray-200); cursor: pointer; font-weight: bold; }
-        .delete-item { color: var(--danger); cursor: pointer; background: none; border: none; font-size: 1rem; }
-        .summary-card { background: white; border-radius: var(--radius-xl); padding: 1.5rem; position: sticky; top: 2rem; box-shadow: var(--shadow-md); }
-        .summary-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--gray-100); }
-        .summary-total { font-size: 1.5rem; font-weight: 700; color: var(--primary-dark); margin: 0.75rem 0; display: flex; justify-content: space-between; }
-        .amount-words { font-size: 0.7rem; color: var(--gray-600); font-style: italic; margin: 0.5rem 0; }
-        .scan-bar { background: var(--gray-100); border: 2px dashed var(--gray-200); border-radius: 1.25rem; padding: 1.25rem; text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 1.25rem; }
-        .scan-bar:hover { background: #eef2ff; border-color: var(--primary); transform: scale(0.99); }
-        .scan-bar i { font-size: 2rem; color: var(--primary); }
-        .scanner-container { margin-bottom: 1rem; border-radius: 1rem; overflow: hidden; background: black; }
-        .action-buttons { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
-            z-index: 10000; visibility: hidden; opacity: 0; transition: all 0.2s ease;
-        }
-        .modal-overlay.active { visibility: visible; opacity: 1; }
-        .product-form {
-            background: white; max-width: 90%; width: 550px; max-height: 85vh; overflow-y: auto;
-            border-radius: 1.5rem; padding: 1.5rem;
-        }
-        .product-form input, .product-form select, .product-form textarea {
-            width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 0.75rem;
-            margin-top: 4px; margin-bottom: 12px;
-        }
-        .product-form label { font-weight: 500; font-size: 0.875rem; margin-top: 5px; display: block; }
-        .autocomplete-items {
-            position: absolute;
-            background: white;
-            border: 1px solid var(--gray-200);
-            border-radius: 0.75rem;
-            max-height: 200px;
-            overflow-y: auto;
-            z-index: 100;
-            width: 100%;
-            margin-top: 2px;
-        }
-        .autocomplete-item { padding: 8px 12px; cursor: pointer; }
-        .autocomplete-item:hover { background: var(--gray-100); }
+        body { background: #f1f5f9; font-family: 'Inter', sans-serif; padding: 2rem; max-width: 1400px; margin: auto; }
+        .card { background: white; border-radius: 1.5rem; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .card-title { font-weight: 600; margin-bottom: 1rem; border-left: 3px solid #4f46e5; padding-left: 0.75rem; }
+        input, select, button { padding: 0.5rem 1rem; border-radius: 2rem; border: 1px solid #e2e8f0; }
+        button { background: #10b981; color: white; border: none; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 0.5rem; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        .toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 0.5rem 1rem; border-radius: 2rem; z-index: 1000; }
+        .autocomplete-items { position: absolute; background: white; border: 1px solid #ccc; max-height: 200px; overflow-y: auto; width: 100%; z-index: 100; }
+        .autocomplete-item { padding: 8px; cursor: pointer; }
+        .autocomplete-item:hover { background: #f1f5f9; }
         .product-search-container { position: relative; }
-        @media (max-width: 900px) {
-            .app { flex-direction: column; }
-            .sidebar { width: 100%; height: auto; position: static; flex-direction: row; flex-wrap: wrap; padding: 1rem; }
-            .nav-links { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-            .main { max-width: 100%; padding: 1.5rem; }
-            .invoice-grid { grid-template-columns: 1fr; }
-        }
+        .hidden { display: none; }
+        .invoice-grid { display: grid; grid-template-columns: 1fr 320px; gap: 1.5rem; }
+        .qty-control { display: flex; gap: 0.5rem; align-items: center; }
+        .qty-btn { width: 28px; height: 28px; border-radius: 2rem; background: white; border: 1px solid #ccc; cursor: pointer; }
     </style>
 </head>
 <body>
-<div class="app">
-    <aside class="sidebar">
-        <div class="logo-area"><h2>UAN STORE</h2><p>inventory + billing</p></div>
-        <div class="nav-links">
-            <div data-tab="dashboard" class="nav-item active"><i class="fas fa-chart-line"></i> Dashboard</div>
-            <div data-tab="inventory" class="nav-item"><i class="fas fa-boxes"></i> Inventory</div>
-            <div data-tab="invoice" class="nav-item"><i class="fas fa-receipt"></i> New Invoice</div>
-            <div data-tab="history" class="nav-item"><i class="fas fa-history"></i> Invoice History</div>
-            <div data-tab="customers" class="nav-item"><i class="fas fa-users"></i> Customers</div>
-            <div data-tab="workers" class="nav-item"><i class="fas fa-user-cog"></i> Workers</div>
-            <div data-tab="settings" class="nav-item"><i class="fas fa-cog"></i> Settings</div>
+    <h1>UAN Store – Invoice</h1>
+    <div class="card">
+        <div class="card-title">Create Invoice</div>
+        <div style="display:flex; gap:1rem; margin-bottom:1rem;">
+            <div style="flex:1;"><label>Invoice No.</label><input type="text" id="invoiceNo" readonly></div>
+            <div style="flex:1;"><label>Date</label><input type="date" id="invoiceDate"></div>
         </div>
-    </aside>
-    <main class="main">
-        <div class="top-bar"><h1 class="page-title"><i class="fas fa-store"></i> UAN Store</h1><select id="workerSelect" class="worker-select"><option>Manager</option><option>Cashier</option></select></div>
-
-        <!-- Dashboard Tab -->
-        <div id="dashboardTab" class="tab-content">
-            <div class="stats-grid" id="statsGrid">Loading...</div>
-            <div class="card"><div class="card-title"><i class="fas fa-chart-line"></i> Weekly Revenue</div><canvas id="revenueChart" height="200"></canvas></div>
-            <div class="grid md:grid-cols-2 gap-6"><div class="card"><div class="card-title"><i class="fas fa-exclamation-triangle"></i> Low Stock Items</div><div id="lowStockList"></div></div><div class="card"><div class="card-title"><i class="fas fa-clock"></i> Recent Invoices</div><div id="recentInvoices"></div></div></div>
-        </div>
-
-        <!-- Inventory Tab -->
-        <div id="inventoryTab" class="tab-content hidden">
-            <div class="card"><div class="card-title"><i class="fas fa-boxes"></i> Manage Products</div>
-                <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
-                    <input type="text" id="searchProduct" placeholder="🔍 Search by name or barcode" style="flex:1">
-                    <button id="addProductBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Add Product</button>
-                    <button id="scanInventoryBtn" class="btn btn-outline"><i class="fas fa-camera"></i> Scan</button>
+        <div class="invoice-grid">
+            <div>
+                <div class="card" style="margin-bottom:1rem;">
+                    <div class="card-title">Bill to</div>
+                    <div style="display:flex; gap:1rem;"><input type="text" id="custName" placeholder="Customer name" style="flex:1"><input type="text" id="custPhone" placeholder="Phone" style="flex:1"></div>
+                    <div id="repeatCustomerBadge"></div>
                 </div>
-                <div class="overflow-x-auto"><table class="products-table"><thead><tr><th>Barcode</th><th>Image</th><th>Name</th><th>Stock</th><th>Price</th><th>Actions</th></tr></thead><tbody id="productsTbody"></tbody></td></div>
-            </div>
-        </div>
-
-        <!-- Invoice Tab (autocomplete adds directly) -->
-        <div id="invoiceTab" class="tab-content hidden">
-            <div class="card"><div class="card-title"><i class="fas fa-file-invoice"></i> Create Invoice</div>
-                <div style="display:flex; gap:1rem; margin-bottom:1rem;">
-                    <div style="flex:1;"><label>Invoice No.</label><input type="text" id="invoiceNo" readonly style="background:#f3f4f6;"></div>
-                    <div style="flex:1;"><label>Date</label><input type="date" id="invoiceDate"></div>
-                </div>
-                <div class="invoice-grid">
-                    <div>
-                        <div class="card" style="margin-bottom:1rem;"><div class="card-title">Bill to</div><div class="form-row" style="display:flex; gap:1rem;"><input type="text" id="custName" placeholder="Customer name" style="flex:1"><input type="text" id="custPhone" placeholder="Phone" style="flex:1"></div><div id="repeatCustomerBadge"></div></div>
-                        <div class="card"><div class="card-title">Add products</div>
-                            <div id="scanTrigger" class="scan-bar"><i class="fas fa-camera"></i><p>Tap to scan (stays open)</p></div>
-                            <div id="scannerContainer" class="scanner-container" style="display:none;"></div>
-                            <div class="scanner-control" id="scannerControl" style="display:none; text-align:right;"><button id="stopScannerBtn" style="background:var(--danger); color:white; border:none; padding:0.3rem 1rem; border-radius:2rem;">Close scanner</button></div>
-                            <div class="product-search-container" style="margin: 1rem 0;">
-                                <label>Or search product by name (click suggestion to add)</label>
-                                <input type="text" id="productSearchInput" placeholder="Type product name..." autocomplete="off" class="form-control">
-                                <div id="productSuggestions" class="autocomplete-items hidden"></div>
-                            </div>
-                        </div>
-                        <div class="card"><div class="card-title">Items</div><div class="overflow-x-auto"><table class="items-table"><thead><tr><th>#</th><th>Product</th><th>Qty</th><th>Price</th><th>Total</th><th></th></tr></thead><tbody id="itemsBody"></tbody></table></div></div>
+                <div class="card">
+                    <div class="card-title">Add products</div>
+                    <button id="scanBtn" style="width:100%; margin-bottom:1rem;"><i class="fas fa-camera"></i> Scan Barcode</button>
+                    <div id="scannerContainer" style="display:none; margin-bottom:1rem;"></div>
+                    <div class="product-search-container">
+                        <input type="text" id="productSearch" placeholder="Type product name..." autocomplete="off" style="width:100%;">
+                        <div id="suggestions" class="autocomplete-items hidden"></div>
                     </div>
-                    <div class="summary-card">
-                        <div class="card-title">Order summary</div>
-                        <div class="summary-row"><span>Subtotal</span><span id="subtotal">0</span></div>
-                        <div class="summary-row" style="border-bottom:none;"><span>Discount</span><div style="display:flex; gap:8px;"><select id="discountType" style="width:70px;"><option value="percent">%</option><option value="flat">৳</option></select><input type="number" id="discountValue" value="0" style="width:90px;"></div></div>
-                        <div class="summary-row" style="border-bottom:none;"><span>Discount amount</span><span id="discountAmount">0</span></div>
-                        <div class="summary-row"><span>Tax (%)</span><input type="number" id="taxRate" value="0" style="width:80px;"></div>
-                        <div class="summary-row"><span>Tax amount</span><span id="taxAmount">0</span></div>
-                        <div class="summary-total"><span>GRAND TOTAL</span><span id="grandTotal">0</span></div>
-                        <div class="amount-words" id="amountWords"></div>
-                        <div class="summary-row"><span>Received</span><input type="number" id="received" value="0" style="width:100px;"></div>
-                        <div class="summary-row"><span>Change due</span><span id="changeDue">0</span></div>
-                        <div class="form-group"><label>Payment method</label><select id="paymentMethod"><option>Cash</option><option>Card</option><option>bKash</option><option>Nagad</option></select></div>
-                        <div class="action-buttons"><button id="saveInvoiceBtn" class="btn btn-primary"><i class="fas fa-save"></i> Save</button><button id="resetBtn" class="btn btn-outline"><i class="fas fa-undo-alt"></i> New</button></div>
-                        <button id="printInvoiceBtn" class="btn btn-outline" style="margin-top:1rem; width:100%;"><i class="fas fa-print"></i> Print Invoice</button>
+                </div>
+                <div class="card">
+                    <div class="card-title">Items</div>
+                    <div class="overflow-x-auto">
+                        <table id="itemsTable">
+                            <thead><tr><th>#</th><th>Product</th><th>Qty</th><th>Price</th><th>Total</th><th></th></tr></thead>
+                            <tbody id="itemsBody"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
+            <div>
+                <div class="card">
+                    <div class="card-title">Order summary</div>
+                    <div>Subtotal: <span id="subtotal">0</span></div>
+                    <div>Discount: <select id="discountType"><option value="percent">%</option><option value="flat">৳</option></select> <input type="number" id="discountValue" value="0"></div>
+                    <div>Discount amount: <span id="discountAmount">0</span></div>
+                    <div>Tax (%): <input type="number" id="taxRate" value="0"></div>
+                    <div>Tax amount: <span id="taxAmount">0</span></div>
+                    <div><strong>Total: <span id="grandTotal">0</span></strong></div>
+                    <div>Received: <input type="number" id="received" value="0"></div>
+                    <div>Change: <span id="changeDue">0</span></div>
+                    <div>Payment method: <select id="paymentMethod"><option>Cash</option><option>Card</option><option>bKash</option></select></div>
+                    <div style="margin-top:1rem;"><button id="saveBtn">Save Invoice</button> <button id="resetBtn">Reset</button></div>
+                    <button id="printBtn" style="margin-top:0.5rem;">Print Invoice</button>
+                </div>
+            </div>
         </div>
-
-        <!-- History, Customers, Workers, Settings (same as before) -->
-        <div id="historyTab" class="tab-content hidden"><div class="card"><div class="card-title">All Invoices</div><div class="overflow-x-auto"><table class="products-table"><thead><tr><th>Invoice #</th><th>Date</th><th>Customer</th><th>Total</th><th>Worker</th><th>Actions</th><tr></thead><tbody id="historyTbody"></tbody></table></div></div></div>
-        <div id="customersTab" class="tab-content hidden"><div class="card"><div class="card-title">Customers</div><div style="display:flex; gap:0.5rem; margin-bottom:1rem;"><input type="text" id="searchCustomer" placeholder="Search by phone or name" style="flex:1"><button id="refreshCustomersBtn" class="btn btn-outline">Refresh</button></div><div id="customersList"></div></div></div>
-        <div id="workersTab" class="tab-content hidden">
-            <div class="card"><div class="card-title"><i class="fas fa-user-plus"></i> Add New Worker</div><div style="display:flex; gap:0.5rem;"><input type="text" id="newWorkerName" placeholder="Worker name" style="flex:1"><select id="newWorkerRole" style="width:120px;"><option>Cashier</option><option>Manager</option><option>Admin</option></select><button id="addWorkerBtn" class="btn btn-primary">Add Worker</button></div></div>
-            <div class="card"><div class="card-title"><i class="fas fa-users"></i> Workers List & Performance</div><div class="overflow-x-auto"><table class="workers-table"><thead><tr><th>Name</th><th>Role</th><th>Invoices</th><th>Total Sales</th><th>Status</th><th>Actions</th></tr></thead><tbody id="workersTbody"></tbody></table></div></div>
-        </div>
-        <div id="settingsTab" class="tab-content hidden">
-            <div class="card"><div class="card-title">Store Settings</div><div id="settingsForm"></div><div style="margin-top:1rem; display:flex; gap:0.5rem;"><button id="saveSettingsBtn" class="btn btn-primary">Save Settings</button><button id="testConnectionBtn" class="btn btn-outline">🔌 Test Connection</button></div><div id="connectionStatus" style="margin-top:1rem; font-size:0.8rem;"></div>
-        </div>
-    </main>
-</div>
-<div id="toast" class="toast"></div>
-
-<!-- Add Product Modal -->
-<div id="addProductModal" class="modal-overlay">
-    <div class="product-form">
-        <h2>Add New Product</h2>
-        <div id="addProductMessage" class="hidden" style="color:red;"></div>
-        <label>Barcode *</label><div style="display:flex; gap:0.5rem;"><input type="text" id="newBarcode" placeholder="Scan or type barcode" style="flex:1"><button id="scanBarcodeBtn" class="btn btn-outline">Scan</button></div>
-        <div id="barcodeScannerContainer" class="scanner-container" style="display:none;"></div>
-        <label>Product Name *</label><input type="text" id="newProductName">
-        <label>Category</label><input type="text" id="newCategory">
-        <label>Brand</label><input type="text" id="newBrand">
-        <label>Size</label><input type="text" id="newSize">
-        <label>Description</label><textarea id="newDescription" rows="2"></textarea>
-        <label>Retail Price *</label><input type="number" id="newRetailPrice" step="0.01">
-        <label>Wholesale Price</label><input type="number" id="newWholesalePrice" step="0.01">
-        <label>Initial Stock</label><input type="number" id="newStock" value="0">
-        <label>Minimum Stock Alert</label><input type="number" id="newMinStock" value="5">
-        <div style="display:flex; gap:1rem; margin-top:1rem;"><button id="saveNewProduct" class="btn btn-primary" style="flex:1;">Save</button><button id="cancelAddProduct" class="btn btn-outline" style="flex:1;">Cancel</button></div>
     </div>
-</div>
+    <div id="toast" class="toast" style="display:none"></div>
 
-<script>
-    // ==================== CONFIGURATION ====================
-    const API_URL = 'https://script.google.com/macros/s/AKfycbw0qZFR4QQusNeZ2v78-k-QcZfobQQffwL72OLLT4NRVdjhyCGw8d7xoFSVwuxrBbz6mA/exec';
-    const API_SECRET = 'UAN_STORE_SECRET_2026';
-    let currentChart = null;
-    let products = [], currentItems = [], scanner = null, settings = { currency: '৳', taxRate: 0, nextInvoiceNum: 1 };
-    let addProductScanner = null, inventoryScanner = null;
+    <script>
+        // ==================== CONFIGURATION ====================
+        const API_URL = 'https://script.google.com/macros/s/AKfycbw0qZFR4QQusNeZ2v78-k-QcZfobQQffwL72OLLT4NRVdjhyCGw8d7xoFSVwuxrBbz6mA/exec';
+        const API_SECRET = 'UAN_STORE_SECRET_2026';
+        let products = [];
+        let currentItems = [];
+        let settings = { currency: '৳', taxRate: 0, nextInvoiceNum: 1 };
+        let scanner = null;
 
-    // Helper
-    function toast(msg, type = '') {
-        const el = document.getElementById('toast');
-        if (!el) return;
-        el.textContent = msg;
-        el.className = 'toast show' + (type ? ' ' + type : '');
-        setTimeout(() => el.className = 'toast', 3000);
-    }
-
-    async function api(action, data = {}) {
-        const payload = JSON.stringify({ action, secret: API_SECRET, ...data });
-        const url = `${API_URL}?request=${encodeURIComponent(payload)}`;
-        const res = await fetch(url);
-        const text = await res.text();
-        try {
-            const json = JSON.parse(text);
-            if (!json.success) throw new Error(json.error);
-            return json.data;
-        } catch(e) {
-            console.error('API error:', text.substring(0, 200));
-            throw new Error(`Server error: ${text.substring(0, 100)}`);
+        // Toast
+        function toast(msg, type = '') {
+            const el = document.getElementById('toast');
+            el.textContent = msg;
+            el.style.display = 'block';
+            el.className = 'toast ' + (type ? type : '');
+            setTimeout(() => el.style.display = 'none', 3000);
         }
-    }
 
-    // Dashboard
-    async function loadDashboard() {
-        try {
-            const stats = await api('getDashboardStats');
-            const grid = document.getElementById('statsGrid');
-            if (grid) grid.innerHTML = `
-                <div class="stat-card"><div class="stat-number">${stats.totalProducts}</div><div>Total Products</div></div>
-                <div class="stat-card"><div class="stat-number text-red-600">${stats.lowStockCount}</div><div>Low Stock</div></div>
-                <div class="stat-card"><div class="stat-number">${settings.currency}${stats.todayRevenue}</div><div>Today Revenue</div></div>
-                <div class="stat-card"><div class="stat-number">${stats.todayCount}</div><div>Today Invoices</div></div>`;
-            const lowDiv = document.getElementById('lowStockList');
-            if (lowDiv) lowDiv.innerHTML = stats.lowStockItems.map(p => `<div>${p.name} (${p.stock}/${p.minStock})</div>`).join('') || '<div>✅ All good</div>';
-            const recentDiv = document.getElementById('recentInvoices');
-            if (recentDiv) recentDiv.innerHTML = stats.recentInvoices.map(i => `<div>${i.invoiceId} – ${i.customerName} – ${settings.currency}${i.total}</div>`).join('');
-            if (currentChart) currentChart.destroy();
-            const ctx = document.getElementById('revenueChart')?.getContext('2d');
-            if (ctx) currentChart = new Chart(ctx, { type: 'line', data: { labels: stats.weeklyData.map(w => w.day), datasets: [{ label: 'Revenue', data: stats.weeklyData.map(w => w.total), borderColor: '#4f46e5', tension: 0.2 }] } });
-        } catch(e) { toast(e.message, 'error'); }
-    }
+        // API call
+        async function api(action, data = {}) {
+            const payload = JSON.stringify({ action, secret: API_SECRET, ...data });
+            const url = `${API_URL}?request=${encodeURIComponent(payload)}`;
+            const res = await fetch(url);
+            const text = await res.text();
+            try {
+                const json = JSON.parse(text);
+                if (!json.success) throw new Error(json.error);
+                return json.data;
+            } catch (e) {
+                console.error('API error:', text);
+                throw new Error(`Server error: ${text.substring(0, 100)}`);
+            }
+        }
 
-    // Inventory
-    async function loadInventory() {
-        try {
-            products = await api('getProducts');
-            const tbody = document.getElementById('productsTbody');
-            if (!tbody) return;
-            tbody.innerHTML = products.map(p => `
-                <tr><td style="font-size:0.8rem;">${p.barcode}侧<td style="text-align:center">${p.imageUrl ? `<img src="${p.imageUrl}" width="40" height="40" style="object-fit:cover; border-radius:8px;">` : '-'}侧<td class="${p.stock <= p.minStock ? 'text-red-600 font-bold' : ''}">${p.stock}侧<td>${settings.currency}${p.retailPrice}侧<td><button class="editStockBtn btn btn-outline text-xs" data-barcode="${p.barcode}">Edit Stock</button>侧
+        // Load products and settings
+        async function loadData() {
+            try {
+                const [prods, setts] = await Promise.all([api('getProducts'), api('getSettings')]);
+                products = prods;
+                settings = setts;
+                const year = new Date().getFullYear();
+                document.getElementById('invoiceNo').value = `INV-${year}-${String(settings.nextInvoiceNum || 1).padStart(4, '0')}`;
+                document.getElementById('invoiceDate').value = new Date().toISOString().slice(0, 10);
+                document.getElementById('taxRate').value = settings.taxRate || 0;
+                toast('Data loaded', 'success');
+            } catch (e) {
+                toast(e.message, 'error');
+                console.error(e);
+            }
+        }
+
+        // Render items table
+        function renderItems() {
+            const tbody = document.getElementById('itemsBody');
+            if (!currentItems.length) {
+                tbody.innerHTML = '<tr><td colspan="6">No items added</td></tr>';
+                recalcTotals();
+                return;
+            }
+            tbody.innerHTML = currentItems.map((item, idx) => `
+                <tr>
+                    <td>${idx+1}</td>
+                    <td>${item.name}<br><small>${item.barcode}</small></td>
+                    <td><div class="qty-control"><button class="qty-dec" data-idx="${idx}">-</button><input type="number" class="qty-val" data-idx="${idx}" value="${item.qty}" min="1" style="width:55px"><button class="qty-inc" data-idx="${idx}">+</button></div></td>
+                    <td>${settings.currency}${item.price}</td>
+                    <td>${settings.currency}${(item.price * item.qty).toFixed(2)}</td>
+                    <td><button class="remove-item" data-idx="${idx}">X</button></td>
+                </tr>
             `).join('');
-            document.querySelectorAll('.editStockBtn').forEach(btn => btn.onclick = async () => {
-                const ns = prompt('Enter new stock:');
-                if (ns) { await api('updateProductStock', { barcode: btn.dataset.barcode, newStock: parseInt(ns) }); toast('Stock updated', 'success'); loadInventory(); loadDashboard(); }
+            // Attach events
+            document.querySelectorAll('.qty-dec').forEach(btn => btn.onclick = () => {
+                let idx = parseInt(btn.dataset.idx);
+                if (currentItems[idx].qty > 1) currentItems[idx].qty--;
+                renderItems();
             });
-        } catch(e) { toast(e.message, 'error'); }
-    }
-
-    // Autocomplete - adds product directly when clicked
-    function updateProductSuggestions() {
-        const input = document.getElementById('productSearchInput');
-        const suggestionsDiv = document.getElementById('productSuggestions');
-        if (!input || !suggestionsDiv) return;
-        const query = input.value.trim().toLowerCase();
-        if (!query) {
-            suggestionsDiv.classList.add('hidden');
-            suggestionsDiv.innerHTML = '';
-            return;
+            document.querySelectorAll('.qty-inc').forEach(btn => btn.onclick = () => {
+                let idx = parseInt(btn.dataset.idx);
+                currentItems[idx].qty++;
+                renderItems();
+            });
+            document.querySelectorAll('.qty-val').forEach(inp => inp.onchange = () => {
+                let idx = parseInt(inp.dataset.idx);
+                let v = parseInt(inp.value);
+                if (isNaN(v) || v < 1) v = 1;
+                currentItems[idx].qty = v;
+                renderItems();
+            });
+            document.querySelectorAll('.remove-item').forEach(btn => btn.onclick = () => {
+                let idx = parseInt(btn.dataset.idx);
+                currentItems.splice(idx, 1);
+                renderItems();
+            });
+            recalcTotals();
         }
-        const matches = products.filter(p => p.name.toLowerCase().includes(query));
-        if (!matches.length) {
-            suggestionsDiv.classList.add('hidden');
-            suggestionsDiv.innerHTML = '';
-            return;
-        }
-        suggestionsDiv.innerHTML = matches.map(p => `<div class="autocomplete-item" data-barcode="${p.barcode}" data-name="${p.name}" data-price="${p.retailPrice}">${p.name} (${settings.currency}${p.retailPrice})</div>`).join('');
-        suggestionsDiv.classList.remove('hidden');
-    }
 
-    // Attach click handler to suggestions (adds product instantly)
-    function attachSuggestionClick() {
-        const div = document.getElementById('productSuggestions');
-        if (!div) return;
-        div.onclick = (e) => {
+        function recalcTotals() {
+            let subtotal = currentItems.reduce((s,i) => s + i.price * i.qty, 0);
+            let discType = document.getElementById('discountType').value;
+            let discVal = parseFloat(document.getElementById('discountValue').value) || 0;
+            let discount = discType === 'percent' ? subtotal * discVal / 100 : discVal;
+            let afterDisc = subtotal - discount;
+            let taxRate = parseFloat(document.getElementById('taxRate').value) || 0;
+            let tax = afterDisc * taxRate / 100;
+            let total = afterDisc + tax;
+            document.getElementById('subtotal').innerText = `${settings.currency}${subtotal.toFixed(2)}`;
+            document.getElementById('discountAmount').innerText = `${settings.currency}${discount.toFixed(2)}`;
+            document.getElementById('taxAmount').innerText = `${settings.currency}${tax.toFixed(2)}`;
+            document.getElementById('grandTotal').innerText = `${settings.currency}${total.toFixed(2)}`;
+            let received = parseFloat(document.getElementById('received').value) || 0;
+            let change = received - total;
+            document.getElementById('changeDue').innerText = `${settings.currency}${change >= 0 ? change.toFixed(2) : '0.00'}`;
+        }
+
+        // Add product to invoice
+        function addProductToInvoice(barcode, name, price) {
+            const existing = currentItems.find(i => i.barcode === barcode);
+            if (existing) {
+                existing.qty++;
+            } else {
+                currentItems.push({ barcode, name, price, qty: 1 });
+            }
+            renderItems();
+            toast(`Added ${name}`, 'success');
+            console.log('Current items:', currentItems);
+        }
+
+        // Autocomplete logic
+        const searchInput = document.getElementById('productSearch');
+        const suggestionsDiv = document.getElementById('suggestions');
+
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value.trim().toLowerCase();
+            if (!query) {
+                suggestionsDiv.classList.add('hidden');
+                suggestionsDiv.innerHTML = '';
+                return;
+            }
+            const matches = products.filter(p => p.name.toLowerCase().includes(query));
+            if (!matches.length) {
+                suggestionsDiv.classList.add('hidden');
+                suggestionsDiv.innerHTML = '';
+                return;
+            }
+            suggestionsDiv.innerHTML = matches.map(p => `<div class="autocomplete-item" data-barcode="${p.barcode}" data-name="${p.name}" data-price="${p.retailPrice}">${p.name} (${settings.currency}${p.retailPrice})</div>`).join('');
+            suggestionsDiv.classList.remove('hidden');
+        });
+
+        // Use mousedown to avoid blur hiding the list before click
+        suggestionsDiv.addEventListener('mousedown', (e) => {
             const item = e.target.closest('.autocomplete-item');
             if (!item) return;
+            e.preventDefault();  // prevent blur from firing before click
             const barcode = item.dataset.barcode;
             const name = item.dataset.name;
             const price = parseFloat(item.dataset.price);
-            // Add product directly to invoice
-            const existing = currentItems.find(i => i.barcode === barcode);
-            if (existing) existing.qty++;
-            else currentItems.push({ barcode, name, price, qty: 1 });
+            addProductToInvoice(barcode, name, price);
+            searchInput.value = '';
+            suggestionsDiv.classList.add('hidden');
+            suggestionsDiv.innerHTML = '';
+        });
+
+        // Hide suggestions on blur, but delay to allow mousedown
+        searchInput.addEventListener('blur', () => {
+            setTimeout(() => {
+                suggestionsDiv.classList.add('hidden');
+                suggestionsDiv.innerHTML = '';
+            }, 200);
+        });
+
+        // Scanner
+        async function startScanner() {
+            if (scanner) await scanner.stop();
+            const container = document.getElementById('scannerContainer');
+            container.style.display = 'block';
+            container.innerHTML = '<div id="reader" style="width:100%"></div>';
+            const html5Qr = new Html5Qrcode('reader');
+            scanner = html5Qr;
+            try {
+                await html5Qr.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 250, height: 250 } },
+                    (decoded) => {
+                        const prod = products.find(p => p.barcode === decoded);
+                        if (prod) {
+                            addProductToInvoice(prod.barcode, prod.name, prod.retailPrice);
+                        } else {
+                            toast('Product not found', 'error');
+                        }
+                    },
+                    (err) => {}
+                );
+            } catch(e) {
+                toast('Camera error', 'error');
+                container.style.display = 'none';
+            }
+        }
+
+        document.getElementById('scanBtn').onclick = startScanner;
+
+        // Save invoice
+        async function saveInvoice() {
+            if (currentItems.length === 0) {
+                toast('No items', 'error');
+                return;
+            }
+            // Check stock
+            for (let item of currentItems) {
+                const prod = products.find(p => p.barcode === item.barcode);
+                if (!prod || prod.stock < item.qty) {
+                    toast(`${item.name}: only ${prod?.stock || 0} in stock`, 'error');
+                    return;
+                }
+            }
+            const subtotal = currentItems.reduce((s,i) => s + i.price * i.qty, 0);
+            const discType = document.getElementById('discountType').value;
+            const discVal = parseFloat(document.getElementById('discountValue').value) || 0;
+            const discount = discType === 'percent' ? subtotal * discVal / 100 : discVal;
+            const afterDisc = subtotal - discount;
+            const taxRate = parseFloat(document.getElementById('taxRate').value) || 0;
+            const tax = afterDisc * taxRate / 100;
+            const total = afterDisc + tax;
+            const paid = parseFloat(document.getElementById('received').value) || 0;
+            const change = paid - total;
+            const invoiceData = {
+                customerName: document.getElementById('custName').value.trim() || 'Walk-in',
+                customerPhone: document.getElementById('custPhone').value.trim(),
+                items: currentItems.map(i => ({ barcode: i.barcode, name: i.name, qty: i.qty, price: i.price })),
+                subtotal, discount, tax, total, paid, change: change > 0 ? change : 0,
+                paymentMethod: document.getElementById('paymentMethod').value,
+                notes: '',
+                worker: 'Manager'
+            };
+            try {
+                const result = await api('saveInvoice', { invoice: invoiceData });
+                toast(`Invoice ${result.invoiceId} saved`, 'success');
+                // Reload products to update stock
+                products = await api('getProducts');
+                resetForm();
+                loadData(); // refresh invoice number
+            } catch(e) {
+                toast(e.message, 'error');
+            }
+        }
+
+        function resetForm() {
+            currentItems = [];
             renderItems();
-            // Clear search input and suggestions
-            document.getElementById('productSearchInput').value = '';
-            div.classList.add('hidden');
-            toast(`Added ${name}`, 'success');
-        };
-    }
-
-    // Items rendering and totals
-    function renderItems() {
-        const tbody = document.getElementById('itemsBody');
-        if (!tbody) return;
-        if (!currentItems.length) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No items added</td></tr>';
-            recalcTotals();
-            return;
+            document.getElementById('custName').value = '';
+            document.getElementById('custPhone').value = '';
+            document.getElementById('received').value = '0';
+            document.getElementById('discountValue').value = '0';
+            document.getElementById('discountType').value = 'percent';
+            document.getElementById('productSearch').value = '';
+            suggestionsDiv.classList.add('hidden');
         }
-        tbody.innerHTML = currentItems.map((item, idx) => `
-            <tr data-idx="${idx}">
-                <td>${idx+1}侧
-                <td><strong>${item.name}</strong><br><small>${item.barcode}</small>侧
-                <td><div class="qty-control"><button class="qty-dec" data-idx="${idx}">-</button><input type="number" class="qty-val" data-idx="${idx}" value="${item.qty}" min="1" style="width:55px;text-align:center;"><button class="qty-inc" data-idx="${idx}">+</button></div>侧
-                <td>${settings.currency}${item.price}侧
-                <td>${settings.currency}${(item.price * item.qty).toFixed(2)}侧
-                <td><button class="remove-item" data-idx="${idx}"><i class="fas fa-trash-alt"></i></button>侧
-            </tr>
-        `).join('');
-        // attach events
-        document.querySelectorAll('.qty-dec').forEach(btn => btn.onclick = () => { let idx = parseInt(btn.dataset.idx); if (currentItems[idx].qty > 1) currentItems[idx].qty--; renderItems(); });
-        document.querySelectorAll('.qty-inc').forEach(btn => btn.onclick = () => { let idx = parseInt(btn.dataset.idx); currentItems[idx].qty++; renderItems(); });
-        document.querySelectorAll('.qty-val').forEach(inp => inp.onchange = () => { let idx = parseInt(inp.dataset.idx); let v = parseInt(inp.value); if (isNaN(v) || v < 1) v = 1; currentItems[idx].qty = v; renderItems(); });
-        document.querySelectorAll('.remove-item').forEach(btn => btn.onclick = () => { let idx = parseInt(btn.dataset.idx); currentItems.splice(idx,1); renderItems(); });
-        recalcTotals();
-    }
 
-    function recalcTotals() {
-        let subtotal = currentItems.reduce((s,i) => s + i.price * i.qty, 0);
-        let discType = document.getElementById('discountType')?.value || 'percent';
-        let discVal = parseFloat(document.getElementById('discountValue')?.value) || 0;
-        let discount = discType === 'percent' ? subtotal * discVal / 100 : discVal;
-        let afterDisc = subtotal - discount;
-        let taxRate = parseFloat(document.getElementById('taxRate')?.value) || 0;
-        let tax = afterDisc * taxRate / 100;
-        let total = afterDisc + tax;
-        if (document.getElementById('subtotal')) document.getElementById('subtotal').innerText = `${settings.currency}${subtotal.toFixed(2)}`;
-        if (document.getElementById('discountAmount')) document.getElementById('discountAmount').innerText = `${settings.currency}${discount.toFixed(2)}`;
-        if (document.getElementById('taxAmount')) document.getElementById('taxAmount').innerText = `${settings.currency}${tax.toFixed(2)}`;
-        if (document.getElementById('grandTotal')) document.getElementById('grandTotal').innerText = `${settings.currency}${total.toFixed(2)}`;
-        let words = numberToWords(Math.floor(total));
-        if (document.getElementById('amountWords')) document.getElementById('amountWords').innerHTML = words ? words + ' taka only' : 'Zero taka only';
-        let received = parseFloat(document.getElementById('received')?.value) || 0;
-        let change = received - total;
-        if (document.getElementById('changeDue')) {
-            document.getElementById('changeDue').innerHTML = `${settings.currency}${change >= 0 ? change.toFixed(2) : '0.00'}`;
-            document.getElementById('changeDue').style.color = change < 0 ? 'red' : '#059669';
+        async function printInvoice() {
+            if (currentItems.length === 0) {
+                toast('No items to print', 'error');
+                return;
+            }
+            // For demo, create a simple print
+            const subtotal = currentItems.reduce((s,i) => s + i.price * i.qty, 0);
+            const discType = document.getElementById('discountType').value;
+            const discVal = parseFloat(document.getElementById('discountValue').value) || 0;
+            const discount = discType === 'percent' ? subtotal * discVal / 100 : discVal;
+            const afterDisc = subtotal - discount;
+            const taxRate = parseFloat(document.getElementById('taxRate').value) || 0;
+            const tax = afterDisc * taxRate / 100;
+            const total = afterDisc + tax;
+            const win = window.open('', '_blank');
+            win.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head><title>Print Invoice</title><style>body{font-family:monospace;padding:0.5in;}</style></head>
+                <body onload="window.print();window.close();">
+                <h2>${settings.storeName || 'UAN Store'}</h2>
+                <p>Invoice: ${document.getElementById('invoiceNo').value}<br>Date: ${document.getElementById('invoiceDate').value}</p>
+                <p>Customer: ${document.getElementById('custName').value || 'Walk-in'}</p>
+                <table border="1"><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+                <tbody>${currentItems.map(i => `<tr><td>${i.name}</td><td>${i.qty}</td><td>${settings.currency}${i.price}</td><td>${settings.currency}${i.price*i.qty}</td></tr>`).join('')}</tbody>
+                </table>
+                <p>Subtotal: ${settings.currency}${subtotal}<br>Discount: ${settings.currency}${discount}<br>Tax: ${settings.currency}${tax}<br><strong>Total: ${settings.currency}${total}</strong></p>
+                <p>${settings.thankYouMsg || 'Thank you!'}</p>
+                </body></html>
+            `);
+            win.document.close();
         }
-    }
 
-    function numberToWords(n) {
-        if (n === 0) return 'Zero';
-        const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
-        const tens = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
-        function w(num) {
-            if (num < 20) return ones[num];
-            if (num < 100) return tens[Math.floor(num/10)] + (num%10 ? ' ' + ones[num%10] : '');
-            if (num < 1000) return ones[Math.floor(num/100)] + ' Hundred' + (num%100 ? ' ' + w(num%100) : '');
-            if (num < 100000) return w(Math.floor(num/1000)) + ' Thousand' + (num%1000 ? ' ' + w(num%1000) : '');
-            if (num < 10000000) return w(Math.floor(num/100000)) + ' Lakh' + (num%100000 ? ' ' + w(num%100000) : '');
-            return w(Math.floor(num/10000000)) + ' Crore' + (num%10000000 ? ' ' + w(num%10000000) : '');
-        }
-        return w(n);
-    }
+        document.getElementById('saveBtn').onclick = saveInvoice;
+        document.getElementById('resetBtn').onclick = resetForm;
+        document.getElementById('printBtn').onclick = printInvoice;
+        document.getElementById('discountValue').addEventListener('input', recalcTotals);
+        document.getElementById('discountType').addEventListener('change', recalcTotals);
+        document.getElementById('taxRate').addEventListener('input', recalcTotals);
+        document.getElementById('received').addEventListener('input', recalcTotals);
 
-    // Scanner for invoice
-    async function startScanner() {
-        if (scanner) await stopScanner();
-        const container = document.getElementById('scannerContainer');
-        if (!container) return;
-        container.style.display = 'block';
-        container.innerHTML = '<div id="invoice-reader" style="width:100%"></div>';
-        document.getElementById('scannerControl').style.display = 'flex';
-        const scanBar = document.getElementById('scanTrigger');
-        if (scanBar) scanBar.classList.add('active');
-        const html5Qr = new Html5Qrcode('invoice-reader');
-        scanner = html5Qr;
-        try {
-            await html5Qr.start({ facingMode: 'environment' }, { fps: 15, qrbox: { width: 250, height: 250 } },
-                (decoded) => {
-                    const prod = products.find(p => p.barcode === decoded);
-                    if (prod) {
-                        const existing = currentItems.find(i => i.barcode === prod.barcode);
-                        if (existing) existing.qty++;
-                        else currentItems.push({ barcode: prod.barcode, name: prod.name, price: prod.retailPrice, qty: 1 });
-                        renderItems();
-                        toast(`Added ${prod.name}`, 'success');
-                    } else toast(`Barcode not found`, 'error');
-                }, () => {});
-        } catch(e) { toast('Camera error: ' + e.message, 'error'); stopScanner(); }
-    }
-
-    async function stopScanner() {
-        if (scanner) { try { await scanner.stop(); await scanner.clear(); } catch(e){} scanner = null; }
-        const container = document.getElementById('scannerContainer');
-        if (container) container.style.display = 'none';
-        const control = document.getElementById('scannerControl');
-        if (control) control.style.display = 'none';
-        const scanBar = document.getElementById('scanTrigger');
-        if (scanBar) scanBar.classList.remove('active');
-    }
-
-    // Customer, Workers, Settings, History (same as working version)
-    async function loadCustomers() { try { const c = await api('getCustomers'); document.getElementById('customersList').innerHTML = c.map(c => `<div class="border-b py-2"><strong>${c.name}</strong><br>${c.phone}<br>${c.totalInvoices} invoices · ${settings.currency}${c.totalSpent}</div>`).join(''); } catch(e){ toast(e.message,'error'); } }
-    async function loadHistory() { try { const inv = await api('getInvoices',{limit:100}); document.getElementById('historyTbody').innerHTML = inv.map(i => `<tr><td style="font-size:0.8rem;">${i.invoiceId}侧<td>${i.date}</td><td>${i.customerName}</td><td>${settings.currency}${i.total}</td><td>${i.worker||'-'}</td><td><button class="printHistoryBtn btn btn-outline text-xs" data-id="${i.invoiceId}">Print</button></td>`).join(''); document.querySelectorAll('.printHistoryBtn').forEach(btn => btn.onclick = () => printInvoiceById(btn.dataset.id)); } catch(e){ toast(e.message,'error'); } }
-    async function loadWorkers() { try { const stats = await api('getWorkerStats'); const tbody = document.getElementById('workersTbody'); tbody.innerHTML = stats.map(w => `<tr><td>${w.name}</td><td>${w.role}</td><td>${w.invoiceCount}</td><td>${settings.currency}${w.totalSales.toFixed(2)}</td><td>${w.status}</td><td><button class="editWorkerBtn" data-name="${w.name}" data-role="${w.role}" data-status="${w.status}">Edit</button> <button class="deleteWorkerBtn" data-name="${w.name}">Delete</button></td>`).join(''); attachWorkerEvents(); } catch(e){ toast(e.message,'error'); } }
-    function attachWorkerEvents() { document.querySelectorAll('.editWorkerBtn').forEach(btn => btn.onclick = () => { let oldName=btn.dataset.name; let newName=prompt('New name',oldName); let role=prompt('Role',btn.dataset.role); let status=prompt('Status',btn.dataset.status); api('updateWorker',{oldName, newName:newName||oldName, role, status}).then(()=>{ toast('Updated'); loadWorkers(); loadWorkersSelect(); }); }); document.querySelectorAll('.deleteWorkerBtn').forEach(btn => btn.onclick = () => { if(confirm('Delete?')) api('deleteWorker',{name:btn.dataset.name}).then(()=>{ toast('Deleted'); loadWorkers(); loadWorkersSelect(); }); }); }
-    async function loadWorkersSelect() { const workers = await api('getWorkers'); const sel = document.getElementById('workerSelect'); if(sel) sel.innerHTML = workers.map(w => `<option value="${w.name}">${w.name} (${w.role})</option>`).join(''); }
-    async function loadSettings() { try { const s = await api('getSettings'); settings = s; document.getElementById('settingsForm').innerHTML = `<div><label>Store Name</label><input id="storeName" value="${s.storeName.replace(/"/g,'&quot;')}"></div><div><label>Phone</label><input id="storePhone" value="${s.storePhone.replace(/"/g,'&quot;')}"></div><div><label>Address</label><input id="storeAddress" value="${s.storeAddress.replace(/"/g,'&quot;')}"></div><div><label>Tax (%)</label><input id="taxRate" value="${s.taxRate}"></div><div><label>Currency</label><input id="currency" value="${s.currency}"></div><div><label>Next Invoice #</label><input id="nextInvoiceNum" value="${s.nextInvoiceNum}"></div><div><label>Thank You Msg</label><textarea id="thankYouMsg">${s.thankYouMsg.replace(/"/g,'&quot;')}</textarea></div>`; } catch(e){ toast(e.message,'error'); } }
-    async function saveSettings() { const s = { storeName:document.getElementById('storeName').value, storePhone:document.getElementById('storePhone').value, storeAddress:document.getElementById('storeAddress').value, taxRate:parseFloat(document.getElementById('taxRate').value), currency:document.getElementById('currency').value, nextInvoiceNum:parseInt(document.getElementById('nextInvoiceNum').value), thankYouMsg:document.getElementById('thankYouMsg').value }; await api('saveSettings',{settings:s}); toast('Saved','success'); loadSettings(); }
-    async function testConnection() { const div = document.getElementById('connectionStatus'); div.innerHTML='Testing...'; try { const res = await fetch(API_URL); const json=await res.json(); if(json.status) div.innerHTML='<span style="color:green">✅ Connected!</span>'; else div.innerHTML='<span style="color:red">❌ Error</span>'; } catch(e){ div.innerHTML=`<span style="color:red">❌ ${e.message}</span>`; } }
-    async function loadCustomerByPhone(phone) { if(phone.length<5) return; try { const c = await api('getCustomerByPhone',{phone}); if(c && c.name) { document.getElementById('custName').value = c.name; document.getElementById('repeatCustomerBadge').innerHTML = `<span class="badge">🔁 Repeat · ${c.totalInvoices} invoices · ${settings.currency}${c.totalSpent}</span>`; } } catch(e){} }
-    async function saveInvoice() {
-        if(!currentItems.length){ toast('No items','error'); return; }
-        for(let it of currentItems){ let prod=products.find(p=>p.barcode===it.barcode); if(!prod || prod.stock < it.qty){ toast(`${it.name}: only ${prod?.stock||0} in stock`,'error'); return; } }
-        let subtotal = currentItems.reduce((s,i)=>s+i.price*i.qty,0);
-        let discType = document.getElementById('discountType').value;
-        let discVal = parseFloat(document.getElementById('discountValue').value)||0;
-        let discount = discType==='percent'? subtotal*discVal/100 : discVal;
-        let afterDisc = subtotal-discount;
-        let taxRate = parseFloat(document.getElementById('taxRate').value)||0;
-        let tax = afterDisc*taxRate/100;
-        let total = afterDisc+tax;
-        let paid = parseFloat(document.getElementById('received').value)||0;
-        let change = paid-total;
-        let invData = {
-            customerName: document.getElementById('custName').value.trim()||'Walk-in',
-            customerPhone: document.getElementById('custPhone').value.trim(),
-            items: currentItems.map(i=>({barcode:i.barcode, name:i.name, qty:i.qty, price:i.price})),
-            subtotal, discount, tax, total, paid, change: change>0?change:0,
-            paymentMethod: document.getElementById('paymentMethod').value,
-            notes: '', worker: document.getElementById('workerSelect').value
-        };
-        try {
-            let res = await api('saveInvoice',{invoice:invData});
-            toast(`Invoice ${res.invoiceId} saved`,'success');
-            let fresh = await api('getProducts');
-            products = fresh;
-            resetForm();
-            let newSet = await api('getSettings');
-            settings = newSet;
-            let year = new Date().getFullYear();
-            document.getElementById('invoiceNo').value = `INV-${year}-${String(settings.nextInvoiceNum||1).padStart(4,'0')}`;
-            if(confirm('Print now?')) printInvoiceById(res.invoiceId);
-            loadHistory();
-        } catch(e){ toast(e.message,'error'); }
-    }
-    async function printInvoiceById(id) { try { let inv = await api('getInvoiceById',{invoiceId:id}); let s = await api('getSettings'); let win = window.open('','_blank'); win.document.write(`<!DOCTYPE html><html><head><title>Print Invoice</title><style>body{font-family:monospace;padding:0.5in;}</style></head><body onload="window.print();window.close();"><div><h2>${s.storeName}</h2><p>${s.storeAddress||''}</p><hr><p>Invoice: ${inv.invoiceId}<br>Date: ${inv.date}<br>Customer: ${inv.customerName}<br>Worker: ${inv.worker||'-'}</p><table border="1"><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>${inv.items.map(it=>`<tr><td>${it.name}</td><td>${it.qty}</td><td>${s.currency}${it.price}</td><td>${s.currency}${it.qty*it.price}</td>`).join('')}</tbody></table><p>Subtotal: ${s.currency}${inv.subtotal}<br>Discount: ${s.currency}${inv.discount}<br>Tax: ${s.currency}${inv.tax}<br><strong>Total: ${s.currency}${inv.total}</strong></p><p>${s.thankYouMsg}</p></div></body></html>`); win.document.close(); } catch(e){ toast(e.message,'error'); } }
-    function resetForm() { currentItems = []; renderItems(); document.getElementById('custName').value = ''; document.getElementById('custPhone').value = ''; document.getElementById('received').value = '0'; document.getElementById('discountValue').value = '0'; document.getElementById('discountType').value = 'percent'; document.getElementById('repeatCustomerBadge').innerHTML = ''; document.getElementById('productSearchInput').value = ''; document.getElementById('productSuggestions').classList.add('hidden'); recalcTotals(); }
-    async function loadInvoiceData() { try { let [p,s] = await Promise.all([api('getProducts'), api('getSettings')]); products = p; settings = s; let year = new Date().getFullYear(); let invNo = document.getElementById('invoiceNo'); if(invNo) invNo.value = `INV-${year}-${String(settings.nextInvoiceNum||1).padStart(4,'0')}`; let invDate = document.getElementById('invoiceDate'); if(invDate) invDate.value = new Date().toISOString().slice(0,10); let tax = document.getElementById('taxRate'); if(tax) tax.value = settings.taxRate||0; } catch(e){ toast(e.message,'error'); } }
-
-    // Modal functions
-    function showAddProductModal() { document.getElementById('addProductModal').classList.add('active'); document.getElementById('newBarcode').value = ''; document.getElementById('newProductName').value = ''; document.getElementById('newCategory').value = ''; document.getElementById('newBrand').value = ''; document.getElementById('newSize').value = ''; document.getElementById('newDescription').value = ''; document.getElementById('newRetailPrice').value = ''; document.getElementById('newWholesalePrice').value = ''; document.getElementById('newStock').value = '0'; document.getElementById('newMinStock').value = '5'; document.getElementById('addProductMessage').classList.add('hidden'); if(addProductScanner) stopAddProductScanner(); }
-    async function startAddProductScanner() { if(addProductScanner) await stopAddProductScanner(); const container = document.getElementById('barcodeScannerContainer'); container.style.display='block'; container.innerHTML='<div id="add-reader" style="width:100%"></div>'; const html5 = new Html5Qrcode('add-reader'); addProductScanner = html5; try { await html5.start({facingMode:'environment'},{fps:15,qrbox:{width:250,height:250}},(decoded)=>{ document.getElementById('newBarcode').value = decoded; stopAddProductScanner(); toast('Scanned'); },()=>{}); } catch(e){ toast('Camera error','error'); stopAddProductScanner(); } }
-    async function stopAddProductScanner() { if(addProductScanner) { try { await addProductScanner.stop(); await addProductScanner.clear(); } catch(e){} addProductScanner=null; } document.getElementById('barcodeScannerContainer').style.display='none'; document.getElementById('barcodeScannerContainer').innerHTML=''; }
-    async function saveNewProduct() { let barcode = document.getElementById('newBarcode').value.trim(); let name = document.getElementById('newProductName').value.trim(); let price = parseFloat(document.getElementById('newRetailPrice').value); if(!barcode || !name || isNaN(price)) { document.getElementById('addProductMessage').innerText='Barcode, Name, Price required'; document.getElementById('addProductMessage').classList.remove('hidden'); return; } let prodData = { barcode, name, category: document.getElementById('newCategory').value, brand: document.getElementById('newBrand').value, size: document.getElementById('newSize').value, description: document.getElementById('newDescription').value, retailPrice: price, wholesalePrice: parseFloat(document.getElementById('newWholesalePrice').value)||0, stock: parseInt(document.getElementById('newStock').value)||0, minStock: parseInt(document.getElementById('newMinStock').value)||5, status:'Active' }; try { await api('addProduct', prodData); toast('Product added','success'); document.getElementById('addProductModal').classList.remove('active'); loadInventory(); loadDashboard(); } catch(e){ toast(e.message,'error'); } }
-    async function startInventoryScanner() { if(inventoryScanner) await stopInventoryScanner(); const modalDiv = document.createElement('div'); modalDiv.id='invScannerModal'; modalDiv.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:10001;display:flex;align-items:center;justify-content:center'; modalDiv.innerHTML='<div style="width:90%;max-width:400px;background:white;border-radius:1rem;overflow:hidden;"><div id="inv-reader" style="width:100%"></div><button id="closeInvScanner" style="margin:10px auto;display:block;background:#ef4444;color:white;border:none;padding:8px 16px;border-radius:2rem;">Close</button></div>'; document.body.appendChild(modalDiv); const html5 = new Html5Qrcode('inv-reader'); inventoryScanner = html5; try { await html5.start({facingMode:'environment'},{fps:15,qrbox:{width:250,height:250}},(decoded)=>{ document.getElementById('searchProduct').value = decoded; loadInventory(); stopInventoryScanner(); modalDiv.remove(); toast('Scanned: '+decoded,'success'); },()=>{}); document.getElementById('closeInvScanner').onclick = () => { stopInventoryScanner(); modalDiv.remove(); }; } catch(e){ toast('Camera error','error'); stopInventoryScanner(); modalDiv.remove(); } }
-    async function stopInventoryScanner() { if(inventoryScanner) { try { await inventoryScanner.stop(); await inventoryScanner.clear(); } catch(e){} inventoryScanner=null; } }
-
-    // Event listeners
-    document.querySelectorAll('[data-tab]').forEach(btn => btn.onclick = () => {
-        let tab = btn.dataset.tab;
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-        document.getElementById(tab+'Tab').classList.remove('hidden');
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        btn.classList.add('active');
-        if(tab==='dashboard') loadDashboard();
-        if(tab==='inventory') loadInventory();
-        if(tab==='history') loadHistory();
-        if(tab==='customers') loadCustomers();
-        if(tab==='workers') { loadWorkers(); loadWorkersSelect(); }
-        if(tab==='settings') loadSettings();
-        if(tab==='invoice') { renderItems(); loadInvoiceData(); }
-    });
-    document.getElementById('addProductBtn').onclick = showAddProductModal;
-    document.getElementById('scanInventoryBtn').onclick = startInventoryScanner;
-    document.getElementById('saveSettingsBtn').onclick = saveSettings;
-    document.getElementById('testConnectionBtn').onclick = testConnection;
-    document.getElementById('refreshCustomersBtn').onclick = loadCustomers;
-    document.getElementById('searchProduct').addEventListener('input', loadInventory);
-    document.getElementById('scanTrigger').onclick = startScanner;
-    document.getElementById('stopScannerBtn').onclick = stopScanner;
-    document.getElementById('saveInvoiceBtn').onclick = saveInvoice;
-    document.getElementById('resetBtn').onclick = resetForm;
-    document.getElementById('printInvoiceBtn').onclick = () => { if(currentItems.length) saveInvoice(); else toast('No items','error'); };
-    document.getElementById('custPhone').addEventListener('blur', e => loadCustomerByPhone(e.target.value));
-    document.getElementById('discountValue').addEventListener('input', recalcTotals);
-    document.getElementById('discountType').addEventListener('change', recalcTotals);
-    document.getElementById('taxRate').addEventListener('input', recalcTotals);
-    document.getElementById('received').addEventListener('input', recalcTotals);
-    window.addEventListener('beforeunload', () => stopScanner());
-
-    const prodSearch = document.getElementById('productSearchInput');
-    if(prodSearch) {
-        prodSearch.addEventListener('input', updateProductSuggestions);
-        prodSearch.addEventListener('blur', () => setTimeout(() => { const sug = document.getElementById('productSuggestions'); if(sug) sug.classList.add('hidden'); }, 200));
-        attachSuggestionClick();
-    }
-    document.getElementById('addWorkerBtn').onclick = async () => { let name = document.getElementById('newWorkerName').value.trim(); let role = document.getElementById('newWorkerRole').value; if(!name) { toast('Worker name required','error'); return; } try { await api('addWorker',{name,role}); toast('Worker added','success'); document.getElementById('newWorkerName').value = ''; loadWorkers(); loadWorkersSelect(); } catch(e){ toast(e.message,'error'); } };
-    document.getElementById('scanBarcodeBtn').onclick = startAddProductScanner;
-    document.getElementById('saveNewProduct').onclick = saveNewProduct;
-    document.getElementById('cancelAddProduct').onclick = () => { stopAddProductScanner(); document.getElementById('addProductModal').classList.remove('active'); };
-
-    // Initial load
-    loadDashboard(); loadInventory(); loadHistory(); loadCustomers(); loadWorkers(); loadWorkersSelect(); loadSettings(); loadInvoiceData(); renderItems();
-</script>
+        // Initial load
+        loadData();
+        renderItems();
+    </script>
 </body>
 </html>
