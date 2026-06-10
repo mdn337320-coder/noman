@@ -67,17 +67,18 @@
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
-            z-index: 10000;
+            z-index: 10000; visibility: hidden; opacity: 0; transition: all 0.2s ease;
         }
+        .modal-overlay.active { visibility: visible; opacity: 1; }
         .product-form {
-            background: white; max-width: 90%; width: 450px; max-height: 85vh; overflow-y: auto;
+            background: white; max-width: 90%; width: 550px; max-height: 85vh; overflow-y: auto;
             border-radius: 1.5rem; padding: 1.5rem;
         }
         .product-form input, .product-form select, .product-form textarea {
             width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 0.75rem;
             margin-top: 4px; margin-bottom: 12px;
         }
-        .product-form label { font-weight: 500; font-size: 0.875rem; }
+        .product-form label { font-weight: 500; font-size: 0.875rem; margin-top: 5px; display: block; }
         @media (max-width: 900px) {
             .app { flex-direction: column; }
             .sidebar { width: 100%; height: auto; position: static; flex-direction: row; flex-wrap: wrap; padding: 1rem; }
@@ -122,7 +123,7 @@
             </div>
         </div>
 
-        <!-- Invoice Tab (unchanged) -->
+        <!-- Invoice Tab -->
         <div id="invoiceTab" class="tab-content hidden">
             <div class="card"><div class="card-title"><i class="fas fa-file-invoice"></i> Create Invoice</div>
                 <div class="invoice-grid">
@@ -163,13 +164,14 @@
 </div>
 <div id="toast" class="toast"></div>
 
-<!-- Modal for Add Product (with scanner) -->
-<div id="addProductModal" class="modal-overlay hidden">
+<!-- Add Product Modal (fixed) -->
+<div id="addProductModal" class="modal-overlay">
     <div class="product-form">
         <h2 class="text-xl font-bold mb-4">Add New Product</h2>
         <div id="addProductMessage" class="text-sm text-red-600 mb-2 hidden"></div>
+        
         <label>Barcode *</label>
-        <div class="flex gap-2">
+        <div class="flex gap-2 mb-2">
             <input type="text" id="newBarcode" placeholder="Scan or type barcode" class="flex-1">
             <button id="scanBarcodeBtn" class="btn btn-outline"><i class="fas fa-camera"></i> Scan</button>
         </div>
@@ -211,12 +213,12 @@
 
 <script>
     // ==================== CONFIGURATION ====================
-    // ⚠️ REPLACE WITH YOUR ACTUAL APPS SCRIPT URL (the same as before)
     const API_URL = 'https://script.google.com/macros/s/AKfycby29O_HKpcUVikEdhYric88sL36-p10WKZOMU0e8OfWelvwYn-NAKLuXvVhn8oSa_E7uw/exec';
     const API_SECRET = 'UAN_STORE_SECRET_2026';
     let currentChart = null;
     let products = [], currentItems = [], scanner = null, settings = { currency: '৳', taxRate: 0, nextInvoiceNum: 1 };
-    let addProductScanner = null; // scanner for the modal
+    let addProductScanner = null; // scanner for modal
+    let inventoryScanner = null;   // scanner for inventory search
 
     // ==================== API – GET request ====================
     async function api(action, data = {}) {
@@ -234,7 +236,6 @@
         }
     }
 
-    // ==================== UTILITIES ====================
     function toast(msg, type = '') {
         const el = document.getElementById('toast');
         el.textContent = msg;
@@ -264,6 +265,7 @@
         try {
             products = await api('getProducts');
             const tbody = document.getElementById('productsTbody');
+            if (!tbody) return;
             tbody.innerHTML = products.map(p => `
                 <tr><td style="font-size:0.8rem;">${p.barcode}侧<td style="text-align:center">${p.imageUrl ? '<img src="'+p.imageUrl+'" width="40" height="40" style="object-fit:cover; border-radius:8px;">' : '-'}侧<td>${p.name}侧<td class="${p.stock <= p.minStock ? 'text-red-600 font-bold' : ''}">${p.stock}侧<td>৳${p.retailPrice}侧<td><button class="editStockBtn btn btn-outline text-xs" data-barcode="${p.barcode}">Edit Stock</button>侧
             `).join('');
@@ -274,7 +276,7 @@
         } catch(e) { toast(e.message, 'error'); }
     }
 
-    // ==================== ADD PRODUCT MODAL WITH SCANNER ====================
+    // ==================== ADD PRODUCT MODAL (fixed) ====================
     function showAddProductModal() {
         // Reset form
         document.getElementById('newBarcode').value = '';
@@ -288,9 +290,10 @@
         document.getElementById('newStock').value = '0';
         document.getElementById('newMinStock').value = '5';
         document.getElementById('addProductMessage').classList.add('hidden');
-        document.getElementById('addProductModal').classList.remove('hidden');
-        // Close any open scanner
+        // Close any open scanner first
         if (addProductScanner) stopAddProductScanner();
+        const modal = document.getElementById('addProductModal');
+        modal.classList.add('active');
     }
 
     async function startAddProductScanner() {
@@ -304,7 +307,7 @@
             await html5Qr.start({ facingMode: 'environment' }, { fps: 15, qrbox: { width: 250, height: 250 } },
                 (decodedText) => {
                     document.getElementById('newBarcode').value = decodedText;
-                    stopAddProductScanner(); // close scanner after successful scan
+                    stopAddProductScanner();
                     toast('Barcode scanned: ' + decodedText, 'success');
                 },
                 (err) => {}
@@ -321,7 +324,7 @@
             addProductScanner = null;
         }
         const container = document.getElementById('barcodeScannerContainer');
-        container.style.display = 'none';
+        if (container) container.style.display = 'none';
         container.innerHTML = '';
     }
 
@@ -330,8 +333,9 @@
         const name = document.getElementById('newProductName').value.trim();
         const retailPrice = parseFloat(document.getElementById('newRetailPrice').value);
         if (!barcode || !name || isNaN(retailPrice)) {
-            document.getElementById('addProductMessage').innerText = 'Barcode, Product Name, and Retail Price are required.';
-            document.getElementById('addProductMessage').classList.remove('hidden');
+            const msgDiv = document.getElementById('addProductMessage');
+            msgDiv.innerText = 'Barcode, Product Name, and Retail Price are required.';
+            msgDiv.classList.remove('hidden');
             return;
         }
         const productData = {
@@ -350,7 +354,7 @@
         try {
             await api('addProduct', productData);
             toast('Product added successfully', 'success');
-            document.getElementById('addProductModal').classList.add('hidden');
+            document.getElementById('addProductModal').classList.remove('active');
             loadInventory();
             loadDashboard();
         } catch(e) {
@@ -359,7 +363,6 @@
     }
 
     // ==================== SCAN FOR INVENTORY SEARCH ====================
-    let inventoryScanner = null;
     async function startInventoryScanner() {
         if (inventoryScanner) await stopInventoryScanner();
         const modal = document.createElement('div');
@@ -374,7 +377,8 @@
         try {
             await html5Qr.start({ facingMode: 'environment' }, { fps: 15, qrbox: { width: 250, height: 250 } },
                 (decodedText) => {
-                    document.getElementById('searchProduct').value = decodedText;
+                    const searchInput = document.getElementById('searchProduct');
+                    if (searchInput) searchInput.value = decodedText;
                     loadInventory(); // triggers search
                     stopInventoryScanner();
                     modal.remove();
@@ -392,6 +396,7 @@
             modal.remove();
         }
     }
+
     async function stopInventoryScanner() {
         if (inventoryScanner) {
             try { await inventoryScanner.stop(); await inventoryScanner.clear(); } catch(e) {}
@@ -399,27 +404,35 @@
         }
     }
 
-    // ==================== INVOICE HISTORY & OTHER FUNCTIONS (unchanged from working version) ====================
+    // ==================== INVOICE HISTORY, CUSTOMERS, SETTINGS (unchanged) ====================
     async function loadHistory() {
         try {
             const invoices = await api('getInvoices', { limit: 100 });
-            document.getElementById('historyTbody').innerHTML = invoices.map(i => `
+            const tbody = document.getElementById('historyTbody');
+            if (!tbody) return;
+            tbody.innerHTML = invoices.map(i => `
                 <tr><td style="font-size:0.8rem;">${i.invoiceId}侧<td>${i.date}侧<td>${i.customerName}侧<td>৳${i.total}侧<td><button class="printHistoryBtn btn btn-outline text-xs" data-id="${i.invoiceId}">Print</button>侧
             `).join('');
             document.querySelectorAll('.printHistoryBtn').forEach(btn => btn.onclick = () => printInvoiceById(btn.dataset.id));
         } catch(e) { toast(e.message, 'error'); }
     }
+
     async function loadCustomers() {
         try {
             const customers = await api('getCustomers');
-            document.getElementById('customersList').innerHTML = customers.map(c => `<div class="border-b py-2 flex justify-between"><div><strong>${c.name}</strong><br>${c.phone}<br>${c.totalInvoices} invoices · ৳${c.totalSpent}</div></div>`).join('');
+            const container = document.getElementById('customersList');
+            if (!container) return;
+            container.innerHTML = customers.map(c => `<div class="border-b py-2 flex justify-between"><div><strong>${c.name}</strong><br>${c.phone}<br>${c.totalInvoices} invoices · ৳${c.totalSpent}</div></div>`).join('');
         } catch(e) { toast(e.message, 'error'); }
     }
+
     async function loadSettings() {
         try {
             const s = await api('getSettings');
             settings = s;
-            document.getElementById('settingsForm').innerHTML = `
+            const form = document.getElementById('settingsForm');
+            if (!form) return;
+            form.innerHTML = `
                 <div class="grid md:grid-cols-2 gap-4">
                     <div><label>Store Name</label><input type="text" id="storeName" value="${s.storeName}"></div>
                     <div><label>Store Phone</label><input type="text" id="storePhone" value="${s.storePhone}"></div>
@@ -432,6 +445,7 @@
             `;
         } catch(e) { toast(e.message, 'error'); }
     }
+
     async function saveSettings() {
         try {
             const s = {
@@ -448,8 +462,10 @@
             loadSettings();
         } catch(e) { toast(e.message, 'error'); }
     }
+
     async function testConnection() {
         const statusDiv = document.getElementById('connectionStatus');
+        if (!statusDiv) return;
         statusDiv.innerHTML = '<span style="color: #f59e0b;">Testing...</span>';
         try {
             const res = await fetch(API_URL);
@@ -466,9 +482,10 @@
         }
     }
 
-    // ==================== INVOICE ITEMS & SCANNER (existing) ====================
+    // ==================== INVOICE ITEMS (existing, kept intact) ====================
     function renderItems() {
         const tbody = document.getElementById('itemsBody');
+        if (!tbody) return;
         if (currentItems.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:1rem;">No items added<\/td><\/tr>'; recalcTotals(); return; }
         tbody.innerHTML = currentItems.map((item, idx) => `
             <tr data-idx="${idx}">
@@ -504,23 +521,25 @@
 
     function recalcTotals() {
         let subtotal = currentItems.reduce((s,i) => s + i.price * i.qty, 0);
-        let discType = document.getElementById('discountType').value;
-        let discVal = parseFloat(document.getElementById('discountValue').value) || 0;
+        let discType = document.getElementById('discountType') ? document.getElementById('discountType').value : 'percent';
+        let discVal = parseFloat(document.getElementById('discountValue') ? document.getElementById('discountValue').value : 0) || 0;
         let discount = discType === 'percent' ? (subtotal * discVal / 100) : discVal;
         let afterDisc = subtotal - discount;
-        let taxRate = parseFloat(document.getElementById('taxRate').value) || 0;
+        let taxRate = parseFloat(document.getElementById('taxRate') ? document.getElementById('taxRate').value : 0) || 0;
         let tax = afterDisc * taxRate / 100;
         let total = afterDisc + tax;
-        document.getElementById('subtotal').innerText = `${settings.currency}${subtotal.toFixed(2)}`;
-        document.getElementById('discountAmount').innerText = `${settings.currency}${discount.toFixed(2)}`;
-        document.getElementById('taxAmount').innerText = `${settings.currency}${tax.toFixed(2)}`;
-        document.getElementById('grandTotal').innerText = `${settings.currency}${total.toFixed(2)}`;
+        if (document.getElementById('subtotal')) document.getElementById('subtotal').innerText = `${settings.currency}${subtotal.toFixed(2)}`;
+        if (document.getElementById('discountAmount')) document.getElementById('discountAmount').innerText = `${settings.currency}${discount.toFixed(2)}`;
+        if (document.getElementById('taxAmount')) document.getElementById('taxAmount').innerText = `${settings.currency}${tax.toFixed(2)}`;
+        if (document.getElementById('grandTotal')) document.getElementById('grandTotal').innerText = `${settings.currency}${total.toFixed(2)}`;
         let words = numberToWords(Math.floor(total));
-        document.getElementById('amountWords').innerHTML = words ? words + ' taka only' : 'Zero taka only';
-        let received = parseFloat(document.getElementById('received').value) || 0;
+        if (document.getElementById('amountWords')) document.getElementById('amountWords').innerHTML = words ? words + ' taka only' : 'Zero taka only';
+        let received = parseFloat(document.getElementById('received') ? document.getElementById('received').value : 0) || 0;
         let change = received - total;
-        document.getElementById('changeDue').innerHTML = `${settings.currency}${change >= 0 ? change.toFixed(2) : '0.00'}`;
-        document.getElementById('changeDue').style.color = change < 0 ? 'var(--danger)' : '#059669';
+        if (document.getElementById('changeDue')) {
+            document.getElementById('changeDue').innerHTML = `${settings.currency}${change >= 0 ? change.toFixed(2) : '0.00'}`;
+            document.getElementById('changeDue').style.color = change < 0 ? 'var(--danger)' : '#059669';
+        }
     }
 
     function numberToWords(n) {
@@ -542,6 +561,7 @@
     async function startScanner() {
         if (scanner) await stopScanner();
         const container = document.getElementById('scannerContainer');
+        if (!container) return;
         container.style.display = 'block';
         container.innerHTML = '<div id="invoice-reader" style="width:100%"></div>';
         document.getElementById('scannerControl').style.display = 'flex';
@@ -569,13 +589,17 @@
 
     async function stopScanner() {
         if (scanner) { try { await scanner.stop(); await scanner.clear(); } catch(e) {} scanner = null; }
-        document.getElementById('scannerContainer').style.display = 'none';
-        document.getElementById('scannerControl').style.display = 'none';
-        document.getElementById('scanTrigger').classList.remove('active');
+        const container = document.getElementById('scannerContainer');
+        if (container) container.style.display = 'none';
+        const control = document.getElementById('scannerControl');
+        if (control) control.style.display = 'none';
+        const scanBar = document.getElementById('scanTrigger');
+        if (scanBar) scanBar.classList.remove('active');
     }
 
     function addManualProduct() {
         const sel = document.getElementById('manualProductSelect');
+        if (!sel) return;
         const barcode = sel.value;
         if (!barcode) return;
         const product = products.find(p => p.barcode === barcode);
@@ -594,8 +618,12 @@
             const customer = await api('getCustomerByPhone', { phone });
             if (customer && customer.name) {
                 document.getElementById('custName').value = customer.name;
-                document.getElementById('repeatCustomerBadge').innerHTML = `<span style="background:#eef2ff; color:#4f46e5; padding:0.2rem 0.8rem; border-radius:2rem; font-size:0.7rem;">🔁 Repeat customer · ${customer.totalInvoices} invoices · ${settings.currency}${customer.totalSpent}</span>`;
-            } else document.getElementById('repeatCustomerBadge').innerHTML = '';
+                const badge = document.getElementById('repeatCustomerBadge');
+                if (badge) badge.innerHTML = `<span style="background:#eef2ff; color:#4f46e5; padding:0.2rem 0.8rem; border-radius:2rem; font-size:0.7rem;">🔁 Repeat customer · ${customer.totalInvoices} invoices · ${settings.currency}${customer.totalSpent}</span>`;
+            } else {
+                const badge = document.getElementById('repeatCustomerBadge');
+                if (badge) badge.innerHTML = '';
+            }
         } catch(e) {}
     }
 
@@ -606,21 +634,22 @@
             if (!prod || prod.stock < item.qty) { toast(`${item.name}: only ${prod?.stock || 0} in stock`, 'error'); return; }
         }
         let subtotal = currentItems.reduce((s,i) => s + i.price * i.qty, 0);
-        let discType = document.getElementById('discountType').value;
-        let discVal = parseFloat(document.getElementById('discountValue').value) || 0;
+        let discType = document.getElementById('discountType') ? document.getElementById('discountType').value : 'percent';
+        let discVal = parseFloat(document.getElementById('discountValue') ? document.getElementById('discountValue').value : 0) || 0;
         let discount = discType === 'percent' ? (subtotal * discVal / 100) : discVal;
         let afterDisc = subtotal - discount;
-        let taxRate = parseFloat(document.getElementById('taxRate').value) || 0;
+        let taxRate = parseFloat(document.getElementById('taxRate') ? document.getElementById('taxRate').value : 0) || 0;
         let tax = afterDisc * taxRate / 100;
         let total = afterDisc + tax;
-        let paid = parseFloat(document.getElementById('received').value) || 0;
+        let paid = parseFloat(document.getElementById('received') ? document.getElementById('received').value : 0) || 0;
         let change = paid - total;
         const invoiceData = {
             customerName: document.getElementById('custName').value.trim() || 'Walk-in',
             customerPhone: document.getElementById('custPhone').value.trim(),
             items: currentItems.map(i => ({ barcode: i.barcode, name: i.name, qty: i.qty, price: i.price })),
             subtotal, discount, tax, total, paid, change: change > 0 ? change : 0,
-            paymentMethod: document.getElementById('paymentMethod').value, notes: ''
+            paymentMethod: document.getElementById('paymentMethod') ? document.getElementById('paymentMethod').value : 'Cash',
+            notes: ''
         };
         try {
             const result = await api('saveInvoice', { invoice: invoiceData });
@@ -631,7 +660,8 @@
             const newSettings = await api('getSettings');
             settings = newSettings;
             const year = new Date().getFullYear();
-            document.getElementById('invoiceNo').value = `INV-${year}-${String(settings.nextInvoiceNum || 1).padStart(4, '0')}`;
+            const invNoField = document.getElementById('invoiceNo');
+            if (invNoField) invNoField.value = `INV-${year}-${String(settings.nextInvoiceNum || 1).padStart(4, '0')}`;
             if (confirm('Print this invoice now?')) printInvoiceById(result.invoiceId);
         } catch(e) { toast('Save failed: ' + e.message, 'error'); }
     }
@@ -658,7 +688,7 @@
                     <hr>
                     <p><strong>Invoice:</strong> ${inv.invoiceId}<br><strong>Date:</strong> ${inv.date}<br><strong>Customer:</strong> ${inv.customerName || 'Walk-in'}</p>
                     <table><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
-                        <tbody>${inv.items.map(it => `<tr><td>${it.name}</td><td>${it.qty}</td><td>${s.currency}${it.price}</td><td>${s.currency}${it.qty * it.price}</tr></tr>`).join('')}</tbody>
+                        <tbody>${inv.items.map(it => `<tr><td>${it.name}</td><td>${it.qty}</td><td>${s.currency}${it.price}</td><td>${s.currency}${it.qty * it.price}<tr></tr>`).join('')}</tbody>
                     </table>
                     <div class="totals">
                         <div>Subtotal: ${s.currency}${inv.subtotal}</div>
@@ -678,12 +708,18 @@
     function resetForm() {
         currentItems = [];
         renderItems();
-        document.getElementById('custName').value = '';
-        document.getElementById('custPhone').value = '';
-        document.getElementById('received').value = '0';
-        document.getElementById('discountValue').value = '0';
-        document.getElementById('discountType').value = 'percent';
-        document.getElementById('repeatCustomerBadge').innerHTML = '';
+        const custName = document.getElementById('custName');
+        if (custName) custName.value = '';
+        const custPhone = document.getElementById('custPhone');
+        if (custPhone) custPhone.value = '';
+        const received = document.getElementById('received');
+        if (received) received.value = '0';
+        const discountValue = document.getElementById('discountValue');
+        if (discountValue) discountValue.value = '0';
+        const discountType = document.getElementById('discountType');
+        if (discountType) discountType.value = 'percent';
+        const badge = document.getElementById('repeatCustomerBadge');
+        if (badge) badge.innerHTML = '';
         recalcTotals();
     }
 
@@ -693,11 +729,14 @@
             products = allProducts;
             settings = settingsData;
             const year = new Date().getFullYear();
-            document.getElementById('invoiceNo').value = `INV-${year}-${String(settings.nextInvoiceNum || 1).padStart(4, '0')}`;
-            document.getElementById('invoiceDate').value = new Date().toISOString().slice(0, 10);
-            document.getElementById('taxRate').value = settings.taxRate || 0;
+            const invNoField = document.getElementById('invoiceNo');
+            if (invNoField) invNoField.value = `INV-${year}-${String(settings.nextInvoiceNum || 1).padStart(4, '0')}`;
+            const invDate = document.getElementById('invoiceDate');
+            if (invDate) invDate.value = new Date().toISOString().slice(0, 10);
+            const taxRateField = document.getElementById('taxRate');
+            if (taxRateField) taxRateField.value = settings.taxRate || 0;
             const sel = document.getElementById('manualProductSelect');
-            sel.innerHTML = '<option value="">-- Choose product --</option>' + products.map(p => `<option value="${p.barcode}">${p.name} (${settings.currency}${p.retailPrice})</option>`).join('');
+            if (sel) sel.innerHTML = '<option value="">-- Choose product --</option>' + products.map(p => `<option value="${p.barcode}">${p.name} (${settings.currency}${p.retailPrice})</option>`).join('');
         } catch(e) { toast(e.message, 'error'); }
     }
 
@@ -731,18 +770,21 @@
     document.getElementById('resetBtn').onclick = resetForm;
     document.getElementById('printInvoiceBtn').onclick = () => { if (currentItems.length > 0) saveInvoice(); else toast('No items to print', 'error'); };
     document.getElementById('custPhone').addEventListener('blur', e => loadCustomerByPhone(e.target.value));
-    document.getElementById('discountValue').oninput = recalcTotals;
-    document.getElementById('discountType').onchange = recalcTotals;
-    document.getElementById('taxRate').oninput = recalcTotals;
-    document.getElementById('received').oninput = recalcTotals;
+    document.getElementById('discountValue').addEventListener('input', recalcTotals);
+    document.getElementById('discountType').addEventListener('change', recalcTotals);
+    document.getElementById('taxRate').addEventListener('input', recalcTotals);
+    document.getElementById('received').addEventListener('input', recalcTotals);
     window.addEventListener('beforeunload', () => stopScanner());
 
     // Add product modal buttons
-    document.getElementById('scanBarcodeBtn').onclick = () => startAddProductScanner();
-    document.getElementById('saveNewProduct').onclick = () => saveNewProduct();
-    document.getElementById('cancelAddProduct').onclick = () => {
+    const scanBarcodeBtn = document.getElementById('scanBarcodeBtn');
+    if (scanBarcodeBtn) scanBarcodeBtn.onclick = () => startAddProductScanner();
+    const saveNewProductBtn = document.getElementById('saveNewProduct');
+    if (saveNewProductBtn) saveNewProductBtn.onclick = () => saveNewProduct();
+    const cancelAddProduct = document.getElementById('cancelAddProduct');
+    if (cancelAddProduct) cancelAddProduct.onclick = () => {
         stopAddProductScanner();
-        document.getElementById('addProductModal').classList.add('hidden');
+        document.getElementById('addProductModal').classList.remove('active');
     };
 
     // Initial loads
