@@ -7,459 +7,78 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <!-- html5-qrcode library for barcode scanning -->
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background: #f1f5f9;
-            font-family: 'Inter', system-ui, sans-serif;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #f1f5f9; font-family: 'Inter', system-ui, sans-serif; }
         :root {
-            --primary: #4f46e5;
-            --primary-dark: #4338ca;
-            --secondary: #10b981;
-            --danger: #ef4444;
-            --gray-50: #f9fafb;
-            --gray-100: #f3f4f6;
-            --gray-200: #e5e7eb;
-            --gray-600: #4b5563;
-            --gray-800: #1f2937;
-            --sidebar: #0f172a;
-            --radius-xl: 1.5rem;
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --primary: #4f46e5; --primary-dark: #4338ca; --secondary: #10b981; --danger: #ef4444;
+            --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb; --gray-600: #4b5563; --gray-800: #1f2937;
+            --sidebar: #0f172a; --radius-xl: 1.5rem; --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
         }
-
-        /* Layout */
-        .app {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        .sidebar {
-            width: 280px;
-            background: var(--sidebar);
-            padding: 2rem 1.25rem;
-            position: sticky;
-            top: 0;
-            height: 100vh;
-            overflow-y: auto;
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .logo-area h2 {
-            font-size: 1.75rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #fff, #a5b4fc);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-
-        .logo-area p {
-            font-size: 0.7rem;
-            color: #9ca3af;
-            margin-top: 0.25rem;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem 1rem;
-            border-radius: 0.75rem;
-            color: #cbd5e1;
-            transition: all 0.2s;
-            font-weight: 500;
-            cursor: pointer;
-        }
-
-        .nav-item i {
-            width: 1.5rem;
-        }
-
-        .nav-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            transform: translateX(4px);
-        }
-
-        .nav-item.active {
-            background: var(--primary);
-            color: white;
-        }
-
-        .main {
-            flex: 1;
-            padding: 2rem 2.5rem;
-            max-width: calc(100% - 280px);
-        }
-
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .page-title {
-            font-size: 2rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--gray-800), var(--primary-dark));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-
-        .worker-select {
-            background: white;
-            border: 1px solid var(--gray-200);
-            border-radius: 2rem;
-            padding: 0.5rem 1rem;
-            font-size: 0.875rem;
-            cursor: pointer;
-        }
-
-        /* Cards */
-        .card {
-            background: white;
-            border-radius: var(--radius-xl);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            box-shadow: var(--shadow-md);
-            transition: all 0.2s;
-        }
-
-        .card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.15);
-        }
-
-        .card-title {
-            font-weight: 600;
-            margin-bottom: 1.25rem;
-            font-size: 1.1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            border-left: 3px solid var(--primary);
-            padding-left: 0.75rem;
-        }
-
-        /* Form elements */
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        label {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            font-weight: 600;
-            color: var(--gray-600);
-            display: block;
-            margin-bottom: 0.25rem;
-        }
-
-        input,
-        select,
-        textarea {
-            width: 100%;
-            padding: 0.7rem 0.9rem;
-            border: 1px solid var(--gray-200);
-            border-radius: 0.75rem;
-            font-size: 0.9rem;
-            background: white;
-        }
-
-        input:focus,
-        select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-
-        /* Buttons */
-        .btn {
-            padding: 0.75rem 1.25rem;
-            border-radius: 2rem;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            display: inline-block;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--secondary), #059669);
-            color: white;
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--gray-300);
-            color: var(--gray-700);
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: white;
-        }
-
-        /* Dashboard */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
-            background: white;
-            border-radius: var(--radius-xl);
-            padding: 1.25rem;
-            box-shadow: var(--shadow-md);
-            text-align: center;
-        }
-
-        .stat-number {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--primary-dark);
-        }
-
-        /* Tables */
-        .products-table,
-        .items-table,
-        .workers-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .products-table th,
-        .products-table td,
-        .items-table th,
-        .items-table td,
-        .workers-table th,
-        .workers-table td {
-            padding: 0.75rem;
-            text-align: left;
-            border-bottom: 1px solid var(--gray-200);
-        }
-
-        .products-table th {
-            background: var(--gray-50);
-            font-weight: 600;
-        }
-
-        /* Toast */
-        .toast {
-            position: fixed;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%) translateY(1rem);
-            background: var(--gray-900);
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 2rem;
-            font-size: 0.85rem;
-            z-index: 9999;
-            opacity: 0;
-            transition: all 0.2s;
-            pointer-events: none;
-        }
-
-        .toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        .toast.error {
-            background: var(--danger);
-        }
-
-        .toast.success {
-            background: #059669;
-        }
-
-        /* Tab content */
-        .tab-content {
-            display: block;
-            animation: fadeSlideUp 0.3s ease-out;
-        }
-
-        .tab-content.hidden {
-            display: none;
-        }
-
-        @keyframes fadeSlideUp {
-            from {
-                opacity: 0;
-                transform: translateY(15px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Invoice specific */
-        .invoice-grid {
-            display: grid;
-            grid-template-columns: 1fr 380px;
-            gap: 2rem;
-        }
-
-        .qty-control {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .qty-btn {
-            width: 28px;
-            height: 28px;
-            border-radius: 2rem;
-            background: white;
-            border: 1px solid var(--gray-200);
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .delete-item {
-            color: var(--danger);
-            cursor: pointer;
-            background: none;
-            border: none;
-            font-size: 1rem;
-        }
-
-        .summary-card {
-            background: white;
-            border-radius: var(--radius-xl);
-            padding: 1.5rem;
-            position: sticky;
-            top: 2rem;
-            box-shadow: var(--shadow-md);
-        }
-
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid var(--gray-100);
-        }
-
-        .summary-total {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary-dark);
-            margin: 0.75rem 0;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .amount-words {
-            font-size: 0.7rem;
-            color: var(--gray-600);
-            font-style: italic;
-            margin: 0.5rem 0;
-        }
-
-        /* Scanner UI */
-        .scan-bar {
-            background: var(--gray-100);
-            border: 2px dashed var(--gray-200);
-            border-radius: 1.25rem;
-            padding: 1.25rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-bottom: 1.25rem;
-        }
-
-        .scan-bar:hover {
-            background: #eef2ff;
-            border-color: var(--primary);
-            transform: scale(0.99);
-        }
-
-        .scan-bar i {
-            font-size: 2rem;
-            color: var(--primary);
-        }
-
-        .scanner-container {
-            margin-bottom: 1rem;
-            border-radius: 1rem;
-            overflow: hidden;
-            background: black;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 0.75rem;
-            margin-top: 1.5rem;
-        }
-
-        /* Modal */
+        .app { display: flex; min-height: 100vh; }
+        .sidebar { width: 280px; background: var(--sidebar); padding: 2rem 1.25rem; position: sticky; top: 0; height: 100vh; overflow-y: auto; border-right: 1px solid rgba(255,255,255,0.1); }
+        .logo-area h2 { font-size: 1.75rem; font-weight: 700; background: linear-gradient(135deg, #fff, #a5b4fc); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .logo-area p { font-size: 0.7rem; color: #9ca3af; margin-top: 0.25rem; }
+        .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: 0.75rem; color: #cbd5e1; transition: all 0.2s; font-weight: 500; cursor: pointer; }
+        .nav-item i { width: 1.5rem; }
+        .nav-item:hover { background: rgba(255,255,255,0.1); color: white; transform: translateX(4px); }
+        .nav-item.active { background: var(--primary); color: white; }
+        .main { flex: 1; padding: 2rem 2.5rem; max-width: calc(100% - 280px); }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+        .page-title { font-size: 2rem; font-weight: 700; background: linear-gradient(135deg, var(--gray-800), var(--primary-dark)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .worker-select { background: white; border: 1px solid var(--gray-200); border-radius: 2rem; padding: 0.5rem 1rem; font-size: 0.875rem; cursor: pointer; }
+        .card { background: white; border-radius: var(--radius-xl); padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-md); transition: all 0.2s; }
+        .card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px -5px rgba(0,0,0,0.15); }
+        .card-title { font-weight: 600; margin-bottom: 1.25rem; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; border-left: 3px solid var(--primary); padding-left: 0.75rem; }
+        .form-group { margin-bottom: 1rem; }
+        label { font-size: 0.7rem; text-transform: uppercase; font-weight: 600; color: var(--gray-600); display: block; margin-bottom: 0.25rem; }
+        input, select, textarea { width: 100%; padding: 0.7rem 0.9rem; border: 1px solid var(--gray-200); border-radius: 0.75rem; font-size: 0.9rem; background: white; }
+        input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
+        .btn { padding: 0.75rem 1.25rem; border-radius: 2rem; font-weight: 600; cursor: pointer; border: none; display: inline-block; }
+        .btn-primary { background: linear-gradient(135deg, var(--secondary), #059669); color: white; }
+        .btn-outline { background: transparent; border: 1px solid var(--gray-300); color: var(--gray-700); }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card { background: white; border-radius: var(--radius-xl); padding: 1.25rem; box-shadow: var(--shadow-md); text-align: center; }
+        .stat-number { font-size: 2rem; font-weight: 700; color: var(--primary-dark); }
+        .products-table, .items-table, .workers-table { width: 100%; border-collapse: collapse; }
+        .products-table th, .products-table td, .items-table th, .items-table td, .workers-table th, .workers-table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--gray-200); }
+        .products-table th { background: var(--gray-50); font-weight: 600; }
+        .toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(1rem); background: var(--gray-900); color: white; padding: 0.75rem 1.5rem; border-radius: 2rem; font-size: 0.85rem; z-index: 9999; opacity: 0; transition: all 0.2s; pointer-events: none; }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .toast.error { background: var(--danger); }
+        .toast.success { background: #059669; }
+        .tab-content { display: block; animation: fadeSlideUp 0.3s ease-out; }
+        .tab-content.hidden { display: none; }
+        @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .invoice-grid { display: grid; grid-template-columns: 1fr 380px; gap: 2rem; }
+        .qty-control { display: flex; align-items: center; gap: 0.5rem; }
+        .qty-btn { width: 28px; height: 28px; border-radius: 2rem; background: white; border: 1px solid var(--gray-200); cursor: pointer; font-weight: bold; }
+        .delete-item { color: var(--danger); cursor: pointer; background: none; border: none; font-size: 1rem; }
+        .summary-card { background: white; border-radius: var(--radius-xl); padding: 1.5rem; position: sticky; top: 2rem; box-shadow: var(--shadow-md); }
+        .summary-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--gray-100); }
+        .summary-total { font-size: 1.5rem; font-weight: 700; color: var(--primary-dark); margin: 0.75rem 0; display: flex; justify-content: space-between; }
+        .amount-words { font-size: 0.7rem; color: var(--gray-600); font-style: italic; margin: 0.5rem 0; }
+        .scan-bar { background: var(--gray-100); border: 2px dashed var(--gray-200); border-radius: 1.25rem; padding: 1.25rem; text-align: center; cursor: pointer; transition: all 0.2s; margin-bottom: 1.25rem; }
+        .scan-bar:hover { background: #eef2ff; border-color: var(--primary); transform: scale(0.99); }
+        .scan-bar i { font-size: 2rem; color: var(--primary); }
+        .scanner-container { margin-bottom: 1rem; border-radius: 1rem; overflow: hidden; background: black; }
+        .action-buttons { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
         .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-            visibility: hidden;
-            opacity: 0;
-            transition: all 0.2s ease;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+            z-index: 10000; visibility: hidden; opacity: 0; transition: all 0.2s ease;
         }
-
-        .modal-overlay.active {
-            visibility: visible;
-            opacity: 1;
-        }
-
+        .modal-overlay.active { visibility: visible; opacity: 1; }
         .product-form {
-            background: white;
-            max-width: 90%;
-            width: 550px;
-            max-height: 85vh;
-            overflow-y: auto;
-            border-radius: 1.5rem;
-            padding: 1.5rem;
+            background: white; max-width: 90%; width: 550px; max-height: 85vh; overflow-y: auto;
+            border-radius: 1.5rem; padding: 1.5rem;
         }
-
-        .product-form input,
-        .product-form select,
-        .product-form textarea {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 0.75rem;
-            margin-top: 4px;
-            margin-bottom: 12px;
+        .product-form input, .product-form select, .product-form textarea {
+            width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 0.75rem;
+            margin-top: 4px; margin-bottom: 12px;
         }
-
-        .product-form label {
-            font-weight: 500;
-            font-size: 0.875rem;
-            margin-top: 5px;
-            display: block;
-        }
-
-        /* Autocomplete */
+        .product-form label { font-weight: 500; font-size: 0.875rem; margin-top: 5px; display: block; }
         .autocomplete-items {
             position: absolute;
             background: white;
@@ -471,59 +90,22 @@
             width: 100%;
             margin-top: 2px;
         }
-
-        .autocomplete-item {
-            padding: 8px 12px;
-            cursor: pointer;
-        }
-
-        .autocomplete-item:hover {
-            background: var(--gray-100);
-        }
-
-        .product-search-container {
-            position: relative;
-        }
-
-        /* Responsive */
+        .autocomplete-item { padding: 8px 12px; cursor: pointer; transition: background 0.1s; }
+        .autocomplete-item:hover { background: var(--gray-100); }
+        .product-search-container { position: relative; }
         @media (max-width: 900px) {
-            .app {
-                flex-direction: column;
-            }
-
-            .sidebar {
-                width: 100%;
-                height: auto;
-                position: static;
-                flex-direction: row;
-                flex-wrap: wrap;
-                padding: 1rem;
-            }
-
-            .nav-links {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.5rem;
-            }
-
-            .main {
-                max-width: 100%;
-                padding: 1.5rem;
-            }
-
-            .invoice-grid {
-                grid-template-columns: 1fr;
-            }
+            .app { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; position: static; flex-direction: row; flex-wrap: wrap; padding: 1rem; }
+            .nav-links { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+            .main { max-width: 100%; padding: 1.5rem; }
+            .invoice-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
 <div class="app">
     <aside class="sidebar">
-        <div class="logo-area">
-            <h2>UAN STORE</h2>
-            <p>inventory + billing</p>
-        </div>
+        <div class="logo-area"><h2>UAN STORE</h2><p>inventory + billing</p></div>
         <div class="nav-links">
             <div data-tab="dashboard" class="nav-item active"><i class="fas fa-chart-line"></i> Dashboard</div>
             <div data-tab="inventory" class="nav-item"><i class="fas fa-boxes"></i> Inventory</div>
@@ -535,77 +117,42 @@
         </div>
     </aside>
     <main class="main">
-        <div class="top-bar">
-            <h1 class="page-title"><i class="fas fa-store"></i> UAN Store</h1>
-            <select id="workerSelect" class="worker-select">
-                <option>Manager</option>
-                <option>Cashier</option>
-            </select>
-        </div>
+        <div class="top-bar"><h1 class="page-title"><i class="fas fa-store"></i> UAN Store</h1><select id="workerSelect" class="worker-select"><option>Manager</option><option>Cashier</option></select></div>
 
         <!-- Dashboard Tab -->
         <div id="dashboardTab" class="tab-content">
             <div class="stats-grid" id="statsGrid"></div>
-            <div class="card">
-                <div class="card-title"><i class="fas fa-chart-line"></i> Weekly Revenue</div>
-                <canvas id="revenueChart" height="200"></canvas>
-            </div>
-            <div class="grid md:grid-cols-2 gap-6">
-                <div class="card">
-                    <div class="card-title"><i class="fas fa-exclamation-triangle"></i> Low Stock Items</div>
-                    <div id="lowStockList"></div>
-                </div>
-                <div class="card">
-                    <div class="card-title"><i class="fas fa-clock"></i> Recent Invoices</div>
-                    <div id="recentInvoices"></div>
-                </div>
-            </div>
+            <div class="card"><div class="card-title"><i class="fas fa-chart-line"></i> Weekly Revenue</div><canvas id="revenueChart" height="200"></canvas></div>
+            <div class="grid md:grid-cols-2 gap-6"><div class="card"><div class="card-title"><i class="fas fa-exclamation-triangle"></i> Low Stock Items</div><div id="lowStockList"></div></div><div class="card"><div class="card-title"><i class="fas fa-clock"></i> Recent Invoices</div><div id="recentInvoices"></div></div></div>
         </div>
 
         <!-- Inventory Tab -->
         <div id="inventoryTab" class="tab-content hidden">
-            <div class="card">
-                <div class="card-title"><i class="fas fa-boxes"></i> Manage Products</div>
-                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+            <div class="card"><div class="card-title"><i class="fas fa-boxes"></i> Manage Products</div>
+                <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
                     <input type="text" id="searchProduct" placeholder="🔍 Search by name or barcode" style="flex:1">
                     <button id="addProductBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Add Product</button>
                     <button id="scanInventoryBtn" class="btn btn-outline"><i class="fas fa-camera"></i> Scan</button>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="products-table">
-                        <thead>
-                            <tr><th>Barcode</th><th>Image</th><th>Name</th><th>Stock</th><th>Price</th><th>Actions</th>
-                            </thead>
-                        <tbody id="productsTbody"></tbody>
-                    </table>
-                </div>
+                <div class="overflow-x-auto"><table class="products-table"><thead><tr><th>Barcode</th><th>Image</th><th>Name</th><th>Stock</th><th>Price</th><th>Actions</th></tr></thead><tbody id="productsTbody"></tbody></table></div>
             </div>
         </div>
 
-        <!-- Invoice Tab -->
+        <!-- Invoice Tab (fixed: added Invoice No. and Date fields) -->
         <div id="invoiceTab" class="tab-content hidden">
-            <div class="card">
-                <div class="card-title"><i class="fas fa-file-invoice"></i> Create Invoice</div>
+            <div class="card"><div class="card-title"><i class="fas fa-file-invoice"></i> Create Invoice</div>
+                <!-- Invoice details row -->
+                <div style="display:flex; gap:1rem; margin-bottom:1rem;">
+                    <div style="flex:1;"><label>Invoice No.</label><input type="text" id="invoiceNo" readonly style="background:#f3f4f6;"></div>
+                    <div style="flex:1;"><label>Date</label><input type="date" id="invoiceDate"></div>
+                </div>
                 <div class="invoice-grid">
                     <div>
-                        <div class="card" style="margin-bottom: 1rem;">
-                            <div class="card-title">Bill to</div>
-                            <div class="form-row" style="display: flex; gap: 1rem;">
-                                <input type="text" id="custName" placeholder="Customer name" style="flex:1">
-                                <input type="text" id="custPhone" placeholder="Phone" style="flex:1">
-                            </div>
-                            <div id="repeatCustomerBadge"></div>
-                        </div>
-                        <div class="card">
-                            <div class="card-title">Add products</div>
-                            <div id="scanTrigger" class="scan-bar">
-                                <i class="fas fa-camera"></i>
-                                <p>Tap to scan (stays open)</p>
-                            </div>
+                        <div class="card" style="margin-bottom:1rem;"><div class="card-title">Bill to</div><div class="form-row" style="display:flex; gap:1rem;"><input type="text" id="custName" placeholder="Customer name" style="flex:1"><input type="text" id="custPhone" placeholder="Phone" style="flex:1"></div><div id="repeatCustomerBadge"></div></div>
+                        <div class="card"><div class="card-title">Add products</div>
+                            <div id="scanTrigger" class="scan-bar"><i class="fas fa-camera"></i><p>Tap to scan (stays open)</p></div>
                             <div id="scannerContainer" class="scanner-container" style="display:none;"></div>
-                            <div class="scanner-control" id="scannerControl" style="display:none; text-align:right;">
-                                <button id="stopScannerBtn" style="background:var(--danger); color:white; border:none; padding:0.3rem 1rem; border-radius:2rem;">Close scanner</button>
-                            </div>
+                            <div class="scanner-control" id="scannerControl" style="display:none; text-align:right;"><button id="stopScannerBtn" style="background:var(--danger); color:white; border:none; padding:0.3rem 1rem; border-radius:2rem;">Close scanner</button></div>
                             <div class="product-search-container" style="margin: 1rem 0;">
                                 <label>Or search product by name</label>
                                 <input type="text" id="productSearchInput" placeholder="Type product name..." autocomplete="off" class="form-control">
@@ -613,28 +160,12 @@
                             </div>
                             <button id="addSelectedBtn" class="btn btn-outline" style="width:100%;"><i class="fas fa-plus-circle"></i> Add selected</button>
                         </div>
-                        <div class="card">
-                            <div class="card-title">Items</div>
-                            <div class="overflow-x-auto">
-                                <table class="items-table">
-                                    <thead>
-                                        <tr><th>#</th><th>Product</th><th>Qty</th><th>Price</th><th>Total</th><th></th>
-                                        </thead>
-                                    <tbody id="itemsBody"></tbody>
-                                </table>
-                            </div>
-                        </div>
+                        <div class="card"><div class="card-title">Items</div><div class="overflow-x-auto"><table class="items-table"><thead><tr><th>#</th><th>Product</th><th>Qty</th><th>Price</th><th>Total</th><th></th></tr></thead><tbody id="itemsBody"></tbody></table></div></div>
                     </div>
                     <div class="summary-card">
                         <div class="card-title">Order summary</div>
                         <div class="summary-row"><span>Subtotal</span><span id="subtotal">৳0</span></div>
-                        <div class="summary-row" style="border-bottom:none;">
-                            <span>Discount</span>
-                            <div style="display:flex; gap:8px;">
-                                <select id="discountType" style="width:70px;"><option value="percent">%</option><option value="flat">৳</option></select>
-                                <input type="number" id="discountValue" value="0" style="width:90px;">
-                            </div>
-                        </div>
+                        <div class="summary-row" style="border-bottom:none;"><span>Discount</span><div style="display:flex; gap:8px;"><select id="discountType" style="width:70px;"><option value="percent">%</option><option value="flat">৳</option></select><input type="number" id="discountValue" value="0" style="width:90px;"></div></div>
                         <div class="summary-row" style="border-bottom:none;"><span>Discount amount</span><span id="discountAmount">৳0</span></div>
                         <div class="summary-row"><span>Tax (%)</span><input type="number" id="taxRate" value="0" style="width:80px; margin-left:auto;"></div>
                         <div class="summary-row"><span>Tax amount</span><span id="taxAmount">৳0</span></div>
@@ -642,19 +173,8 @@
                         <div class="amount-words" id="amountWords"></div>
                         <div class="summary-row"><span>Received</span><input type="number" id="received" value="0" style="width:100px;"></div>
                         <div class="summary-row"><span>Change due</span><span id="changeDue">৳0</span></div>
-                        <div class="form-group">
-                            <label>Payment method</label>
-                            <select id="paymentMethod">
-                                <option>Cash</option>
-                                <option>Card</option>
-                                <option>bKash</option>
-                                <option>Nagad</option>
-                            </select>
-                        </div>
-                        <div class="action-buttons">
-                            <button id="saveInvoiceBtn" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
-                            <button id="resetBtn" class="btn btn-outline"><i class="fas fa-undo-alt"></i> New</button>
-                        </div>
+                        <div class="form-group"><label>Payment method</label><select id="paymentMethod"><option>Cash</option><option>Card</option><option>bKash</option><option>Nagad</option></select></div>
+                        <div class="action-buttons"><button id="saveInvoiceBtn" class="btn btn-primary"><i class="fas fa-save"></i> Save</button><button id="resetBtn" class="btn btn-outline"><i class="fas fa-undo-alt"></i> New</button></div>
                         <button id="printInvoiceBtn" class="btn btn-outline" style="margin-top:1rem; width:100%;"><i class="fas fa-print"></i> Print Invoice</button>
                     </div>
                 </div>
@@ -662,75 +182,34 @@
         </div>
 
         <!-- History Tab -->
-        <div id="historyTab" class="tab-content hidden">
-            <div class="card">
-                <div class="card-title">All Invoices</div>
-                <div class="overflow-x-auto">
-                    <table class="products-table">
-                        <thead>
-                            <tr><th>Invoice #</th><th>Date</th><th>Customer</th><th>Total</th><th>Worker</th><th>Actions</th>
-                            </thead>
-                        <tbody id="historyTbody"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+        <div id="historyTab" class="tab-content hidden"><div class="card"><div class="card-title">All Invoices</div><div class="overflow-x-auto"><table class="products-table"><thead><tr><th>Invoice #</th><th>Date</th><th>Customer</th><th>Total</th><th>Worker</th><th>Actions</th></tr></thead><tbody id="historyTbody"></tbody></table></div></div></div>
 
         <!-- Customers Tab -->
-        <div id="customersTab" class="tab-content hidden">
-            <div class="card">
-                <div class="card-title">Customers</div>
-                <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
-                    <input type="text" id="searchCustomer" placeholder="Search by phone or name" style="flex:1">
-                    <button id="refreshCustomersBtn" class="btn btn-outline">Refresh</button>
-                </div>
-                <div id="customersList"></div>
-            </div>
-        </div>
+        <div id="customersTab" class="tab-content hidden"><div class="card"><div class="card-title">Customers</div><div style="display:flex; gap:0.5rem; margin-bottom:1rem;"><input type="text" id="searchCustomer" placeholder="Search by phone or name" style="flex:1"><button id="refreshCustomersBtn" class="btn btn-outline">Refresh</button></div><div id="customersList"></div></div></div>
 
         <!-- Workers Tab -->
         <div id="workersTab" class="tab-content hidden">
-            <div class="card">
-                <div class="card-title"><i class="fas fa-user-plus"></i> Add New Worker</div>
+            <div class="card"><div class="card-title"><i class="fas fa-user-plus"></i> Add New Worker</div>
                 <div style="display:flex; gap:0.5rem;">
                     <input type="text" id="newWorkerName" placeholder="Worker name" style="flex:1">
-                    <select id="newWorkerRole" style="width:120px;">
-                        <option>Cashier</option>
-                        <option>Manager</option>
-                        <option>Admin</option>
-                    </select>
+                    <select id="newWorkerRole" style="width:120px;"><option>Cashier</option><option>Manager</option><option>Admin</option></select>
                     <button id="addWorkerBtn" class="btn btn-primary">Add Worker</button>
                 </div>
             </div>
-            <div class="card">
-                <div class="card-title"><i class="fas fa-users"></i> Workers List & Performance</div>
-                <div class="overflow-x-auto">
-                    <table class="workers-table">
-                        <thead>
-                            <tr><th>Name</th><th>Role</th><th>Invoices</th><th>Total Sales</th><th>Status</th><th>Actions</th>
-                            </thead>
-                        <tbody id="workersTbody"></tbody>
-                    </table>
-                </div>
+            <div class="card"><div class="card-title"><i class="fas fa-users"></i> Workers List & Performance</div>
+                <div class="overflow-x-auto"><table class="workers-table"><thead><tr><th>Name</th><th>Role</th><th>Invoices</th><th>Total Sales</th><th>Status</th><th>Actions</th></tr></thead><tbody id="workersTbody"></tbody></table></div>
             </div>
         </div>
 
         <!-- Settings Tab -->
         <div id="settingsTab" class="tab-content hidden">
-            <div class="card">
-                <div class="card-title">Store Settings</div>
-                <div id="settingsForm"></div>
-                <div style="margin-top:1rem; display:flex; gap:0.5rem;">
-                    <button id="saveSettingsBtn" class="btn btn-primary">Save Settings</button>
-                    <button id="testConnectionBtn" class="btn btn-outline">🔌 Test Connection</button>
-                </div>
+            <div class="card"><div class="card-title">Store Settings</div><div id="settingsForm"></div>
+                <div style="margin-top:1rem; display:flex; gap:0.5rem;"><button id="saveSettingsBtn" class="btn btn-primary">Save Settings</button><button id="testConnectionBtn" class="btn btn-outline">🔌 Test Connection</button></div>
                 <div id="connectionStatus" style="margin-top:1rem; font-size:0.8rem;"></div>
             </div>
         </div>
     </main>
 </div>
-
-<!-- Toast Notification -->
 <div id="toast" class="toast"></div>
 
 <!-- Add Product Modal -->
@@ -762,7 +241,6 @@
 
 <script>
     // ==================== CONFIGURATION ====================
-    // Replace this with your deployed Apps Script URL
     const API_URL = 'https://script.google.com/macros/s/AKfycbw0qZFR4QQusNeZ2v78-k-QcZfobQQffwL72OLLT4NRVdjhyCGw8d7xoFSVwuxrBbz6mA/exec';
     const API_SECRET = 'UAN_STORE_SECRET_2026';
     let currentChart = null;
@@ -773,17 +251,17 @@
 
     // ==================== API HELPER ====================
     async function api(action, data = {}) {
+        const payload = JSON.stringify({ action, secret: API_SECRET, ...data });
+        const url = `${API_URL}?request=${encodeURIComponent(payload)}`;
+        const res = await fetch(url);
+        const text = await res.text();
         try {
-            const payload = JSON.stringify({ action, secret: API_SECRET, ...data });
-            const url = `${API_URL}?request=${encodeURIComponent(payload)}`;
-            const res = await fetch(url);
-            const text = await res.text();
             const json = JSON.parse(text);
             if (!json.success) throw new Error(json.error);
             return json.data;
-        } catch (e) {
-            console.error('API Error:', e);
-            throw new Error(`Server error: ${e.message}`);
+        } catch(e) {
+            console.error('API response:', text.substring(0, 500));
+            throw new Error(`Server error: ${text.substring(0, 100)}`);
         }
     }
 
@@ -895,7 +373,7 @@
         const tbody = document.getElementById('itemsBody');
         if (!tbody) return;
         if (currentItems.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:1rem;">No items added</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:1rem;">No items added<\/td><\/tr>';
             recalcTotals();
             return;
         }
@@ -967,7 +445,7 @@
         return w(n);
     }
 
-    // ==================== SCANNER for INVOICE ====================
+    // ==================== SCANNER ====================
     async function startScanner() {
         if (scanner) await stopScanner();
         const container = document.getElementById('scannerContainer');
@@ -1014,7 +492,12 @@
             const invoices = await api('getInvoices', { limit: 100 });
             const tbody = document.getElementById('historyTbody');
             tbody.innerHTML = invoices.map(i => `
-                <tr><td>${i.invoiceId}</td><td>${i.date}</td><td>${i.customerName}</td><td>${settings.currency}${i.total}</td><td>${i.worker || '-'}</td><td><button class="printHistoryBtn btn btn-outline text-xs" data-id="${i.invoiceId}">Print</button></td></tr>
+                <td>${i.invoiceId}侧
+                <td>${i.date}侧
+                <td>${i.customerName}侧
+                <td>${settings.currency}${i.total}侧
+                <td>${i.worker || '-'}侧
+                <td><button class="printHistoryBtn btn btn-outline text-xs" data-id="${i.invoiceId}">Print</button>侧
             `).join('');
             document.querySelectorAll('.printHistoryBtn').forEach(btn => btn.onclick = () => printInvoiceById(btn.dataset.id));
         } catch(e) { toast(e.message, 'error'); }
@@ -1025,9 +508,17 @@
             const stats = await api('getWorkerStats');
             const tbody = document.getElementById('workersTbody');
             tbody.innerHTML = stats.map(w => `
-                <tr><td>${w.name}</td><td>${w.role}</td><td>${w.invoiceCount}</td><td>${settings.currency}${w.totalSales.toFixed(2)}</td><td>${w.status}</td>
-                <td><button class="editWorkerBtn btn btn-outline text-xs" data-name="${w.name}" data-role="${w.role}" data-status="${w.status}">Edit</button>
-                <button class="deleteWorkerBtn btn btn-danger text-xs" data-name="${w.name}">Delete</button></td></tr>
+                <tr>
+                    <td>${w.name}侧
+                    <td>${w.role}侧
+                    <td>${w.invoiceCount}侧
+                    <td>${settings.currency}${w.totalSales.toFixed(2)}侧
+                    <td>${w.status}侧
+                    <td>
+                        <button class="editWorkerBtn btn btn-outline text-xs" data-name="${w.name}" data-role="${w.role}" data-status="${w.status}">Edit</button>
+                        <button class="deleteWorkerBtn btn btn-danger text-xs" data-name="${w.name}">Delete</button>
+                    侧
+                </tr>
             `).join('');
             document.querySelectorAll('.editWorkerBtn').forEach(btn => {
                 btn.onclick = () => {
@@ -1067,13 +558,13 @@
             const form = document.getElementById('settingsForm');
             form.innerHTML = `
                 <div class="grid md:grid-cols-2 gap-4">
-                    <div><label>Store Name</label><input type="text" id="storeName" value="${s.storeName}"></div>
-                    <div><label>Store Phone</label><input type="text" id="storePhone" value="${s.storePhone}"></div>
-                    <div><label>Store Address</label><input type="text" id="storeAddress" value="${s.storeAddress}"></div>
+                    <div><label>Store Name</label><input type="text" id="storeName" value="${s.storeName.replace(/"/g, '&quot;')}"></div>
+                    <div><label>Store Phone</label><input type="text" id="storePhone" value="${s.storePhone.replace(/"/g, '&quot;')}"></div>
+                    <div><label>Store Address</label><input type="text" id="storeAddress" value="${s.storeAddress.replace(/"/g, '&quot;')}"></div>
                     <div><label>Tax Rate (%)</label><input type="number" id="taxRate" value="${s.taxRate}"></div>
                     <div><label>Currency Symbol</label><input type="text" id="currency" value="${s.currency}"></div>
                     <div><label>Next Invoice Number</label><input type="number" id="nextInvoiceNum" value="${s.nextInvoiceNum}"></div>
-                    <div class="md:col-span-2"><label>Thank You Message</label><textarea id="thankYouMsg">${s.thankYouMsg}</textarea></div>
+                    <div class="md:col-span-2"><label>Thank You Message</label><textarea id="thankYouMsg">${s.thankYouMsg.replace(/"/g, '&quot;')}</textarea></div>
                 </div>
             `;
         } catch(e) { toast(e.message, 'error'); }
@@ -1183,7 +674,11 @@
                 <div><h2>${s.storeName}</h2><p>${s.storeAddress || ''}</p><hr>
                 <p>Invoice: ${inv.invoiceId}<br>Date: ${inv.date}<br>Customer: ${inv.customerName}<br>Worker: ${inv.worker || '-'}</p>
                 <table border="1" style="width:100%;border-collapse:collapse;"><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>
-                ${inv.items.map(it => `<tr><td>${it.name}</td><td>${it.qty}</td><td>${s.currency}${it.price}</td><td>${s.currency}${it.qty*it.price}</td></tr>`).join('')}
+                ${inv.items.map(it => `<tr><td>${it.name}侧
+                <td>${it.qty}侧
+                <td>${s.currency}${it.price}侧
+                <td>${s.currency}${it.qty*it.price}侧
+              ``).join('')}
                 </tbody></table>
                 <p>Subtotal: ${s.currency}${inv.subtotal}<br>Discount: ${s.currency}${inv.discount}<br>Tax: ${s.currency}${inv.tax}<br><strong>Total: ${s.currency}${inv.total}</strong></p>
                 <p>${s.thankYouMsg}</p></div></body></html>
@@ -1376,12 +871,14 @@
     window.addEventListener('beforeunload', () => stopScanner());
 
     const searchInput = document.getElementById('productSearchInput');
-    searchInput.addEventListener('input', updateProductSuggestions);
-    searchInput.addEventListener('blur', () => setTimeout(() => {
-        const sug = document.getElementById('productSuggestions');
-        if (sug) sug.classList.add('hidden');
-    }, 200));
-    attachSuggestionClick();
+    if (searchInput) {
+        searchInput.addEventListener('input', updateProductSuggestions);
+        searchInput.addEventListener('blur', () => setTimeout(() => {
+            const sug = document.getElementById('productSuggestions');
+            if (sug) sug.classList.add('hidden');
+        }, 200));
+        attachSuggestionClick();
+    }
 
     document.getElementById('addWorkerBtn').onclick = async () => {
         const name = document.getElementById('newWorkerName').value.trim();
