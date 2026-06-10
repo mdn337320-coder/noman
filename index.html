@@ -134,11 +134,11 @@
                     <button id="addProductBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Add Product</button>
                     <button id="scanInventoryBtn" class="btn btn-outline"><i class="fas fa-camera"></i> Scan</button>
                 </div>
-                <div class="overflow-x-auto"><table class="products-table"><thead><tr><th>Barcode</th><th>Image</th><th>Name</th><th>Stock</th><th>Price</th><th>Actions</th></tr></thead><tbody id="productsTbody"></tbody></table></div>
+                <div class="overflow-x-auto"><table class="products-table"><thead><tr><th>Barcode</th><th>Image</th><th>Name</th><th>Stock</th><th>Price</th><th>Actions</th></tr></thead><tbody id="productsTbody"></tbody></td></div>
             </div>
         </div>
 
-        <!-- Invoice Tab -->
+        <!-- Invoice Tab (autocomplete adds directly) -->
         <div id="invoiceTab" class="tab-content hidden">
             <div class="card"><div class="card-title"><i class="fas fa-file-invoice"></i> Create Invoice</div>
                 <div style="display:flex; gap:1rem; margin-bottom:1rem;">
@@ -153,13 +153,12 @@
                             <div id="scannerContainer" class="scanner-container" style="display:none;"></div>
                             <div class="scanner-control" id="scannerControl" style="display:none; text-align:right;"><button id="stopScannerBtn" style="background:var(--danger); color:white; border:none; padding:0.3rem 1rem; border-radius:2rem;">Close scanner</button></div>
                             <div class="product-search-container" style="margin: 1rem 0;">
-                                <label>Or search product by name</label>
+                                <label>Or search product by name (click suggestion to add)</label>
                                 <input type="text" id="productSearchInput" placeholder="Type product name..." autocomplete="off" class="form-control">
                                 <div id="productSuggestions" class="autocomplete-items hidden"></div>
                             </div>
-                            <button id="addSelectedBtn" class="btn btn-outline" style="width:100%;"><i class="fas fa-plus-circle"></i> Add selected</button>
                         </div>
-                        <div class="card"><div class="card-title">Items</div><div class="overflow-x-auto"><table class="items-table"><thead><tr><th>#</th><th>Product</th><th>Qty</th><th>Price</th><th>Total</th><th></th></td></thead><tbody id="itemsBody"></tbody></table></div></div>
+                        <div class="card"><div class="card-title">Items</div><div class="overflow-x-auto"><table class="items-table"><thead><tr><th>#</th><th>Product</th><th>Qty</th><th>Price</th><th>Total</th><th></th></tr></thead><tbody id="itemsBody"></tbody></table></div></div>
                     </div>
                     <div class="summary-card">
                         <div class="card-title">Order summary</div>
@@ -180,7 +179,8 @@
             </div>
         </div>
 
-        <div id="historyTab" class="tab-content hidden"><div class="card"><div class="card-title">All Invoices</div><div class="overflow-x-auto"><table class="products-table"><thead><tr><th>Invoice #</th><th>Date</th><th>Customer</th><th>Total</th><th>Worker</th><th>Actions</th></tr></thead><tbody id="historyTbody"></tbody></table></div></div></div>
+        <!-- History, Customers, Workers, Settings (same as before) -->
+        <div id="historyTab" class="tab-content hidden"><div class="card"><div class="card-title">All Invoices</div><div class="overflow-x-auto"><table class="products-table"><thead><tr><th>Invoice #</th><th>Date</th><th>Customer</th><th>Total</th><th>Worker</th><th>Actions</th><tr></thead><tbody id="historyTbody"></tbody></table></div></div></div>
         <div id="customersTab" class="tab-content hidden"><div class="card"><div class="card-title">Customers</div><div style="display:flex; gap:0.5rem; margin-bottom:1rem;"><input type="text" id="searchCustomer" placeholder="Search by phone or name" style="flex:1"><button id="refreshCustomersBtn" class="btn btn-outline">Refresh</button></div><div id="customersList"></div></div></div>
         <div id="workersTab" class="tab-content hidden">
             <div class="card"><div class="card-title"><i class="fas fa-user-plus"></i> Add New Worker</div><div style="display:flex; gap:0.5rem;"><input type="text" id="newWorkerName" placeholder="Worker name" style="flex:1"><select id="newWorkerRole" style="width:120px;"><option>Cashier</option><option>Manager</option><option>Admin</option></select><button id="addWorkerBtn" class="btn btn-primary">Add Worker</button></div></div>
@@ -219,7 +219,7 @@
     const API_SECRET = 'UAN_STORE_SECRET_2026';
     let currentChart = null;
     let products = [], currentItems = [], scanner = null, settings = { currency: '৳', taxRate: 0, nextInvoiceNum: 1 };
-    let addProductScanner = null, inventoryScanner = null, selectedProductSuggestion = null;
+    let addProductScanner = null, inventoryScanner = null;
 
     // Helper
     function toast(msg, type = '') {
@@ -272,7 +272,7 @@
             const tbody = document.getElementById('productsTbody');
             if (!tbody) return;
             tbody.innerHTML = products.map(p => `
-                <tr><td style="font-size:0.8rem;">${p.barcode}侧<td>${p.imageUrl ? `<img src="${p.imageUrl}" width="40" height="40" style="object-fit:cover; border-radius:8px;">` : '-'}侧<td class="${p.stock <= p.minStock ? 'text-red-600 font-bold' : ''}">${p.stock}侧<td>${settings.currency}${p.retailPrice}侧<td><button class="editStockBtn btn btn-outline text-xs" data-barcode="${p.barcode}">Edit Stock</button>侧
+                <tr><td style="font-size:0.8rem;">${p.barcode}侧<td style="text-align:center">${p.imageUrl ? `<img src="${p.imageUrl}" width="40" height="40" style="object-fit:cover; border-radius:8px;">` : '-'}侧<td class="${p.stock <= p.minStock ? 'text-red-600 font-bold' : ''}">${p.stock}侧<td>${settings.currency}${p.retailPrice}侧<td><button class="editStockBtn btn btn-outline text-xs" data-barcode="${p.barcode}">Edit Stock</button>侧
             `).join('');
             document.querySelectorAll('.editStockBtn').forEach(btn => btn.onclick = async () => {
                 const ns = prompt('Enter new stock:');
@@ -281,7 +281,7 @@
         } catch(e) { toast(e.message, 'error'); }
     }
 
-    // Autocomplete
+    // Autocomplete - adds product directly when clicked
     function updateProductSuggestions() {
         const input = document.getElementById('productSearchInput');
         const suggestionsDiv = document.getElementById('productSuggestions');
@@ -290,48 +290,38 @@
         if (!query) {
             suggestionsDiv.classList.add('hidden');
             suggestionsDiv.innerHTML = '';
-            selectedProductSuggestion = null;
             return;
         }
         const matches = products.filter(p => p.name.toLowerCase().includes(query));
         if (!matches.length) {
             suggestionsDiv.classList.add('hidden');
             suggestionsDiv.innerHTML = '';
-            selectedProductSuggestion = null;
             return;
         }
         suggestionsDiv.innerHTML = matches.map(p => `<div class="autocomplete-item" data-barcode="${p.barcode}" data-name="${p.name}" data-price="${p.retailPrice}">${p.name} (${settings.currency}${p.retailPrice})</div>`).join('');
         suggestionsDiv.classList.remove('hidden');
     }
 
+    // Attach click handler to suggestions (adds product instantly)
     function attachSuggestionClick() {
         const div = document.getElementById('productSuggestions');
         if (!div) return;
         div.onclick = (e) => {
             const item = e.target.closest('.autocomplete-item');
             if (!item) return;
-            selectedProductSuggestion = { barcode: item.dataset.barcode, name: item.dataset.name, price: parseFloat(item.dataset.price) };
-            document.getElementById('productSearchInput').value = item.dataset.name;
+            const barcode = item.dataset.barcode;
+            const name = item.dataset.name;
+            const price = parseFloat(item.dataset.price);
+            // Add product directly to invoice
+            const existing = currentItems.find(i => i.barcode === barcode);
+            if (existing) existing.qty++;
+            else currentItems.push({ barcode, name, price, qty: 1 });
+            renderItems();
+            // Clear search input and suggestions
+            document.getElementById('productSearchInput').value = '';
             div.classList.add('hidden');
-            toast(`Selected: ${item.dataset.name}`, 'success');
+            toast(`Added ${name}`, 'success');
         };
-    }
-
-    function addSelectedProduct() {
-        let product = selectedProductSuggestion;
-        if (!product) {
-            const inputName = document.getElementById('productSearchInput').value.trim();
-            if (inputName) product = products.find(p => p.name.toLowerCase() === inputName.toLowerCase());
-            if (!product) { toast('Type and select a product', 'error'); return; }
-        }
-        const existing = currentItems.find(i => i.barcode === product.barcode);
-        if (existing) existing.qty++;
-        else currentItems.push({ ...product, qty: 1 });
-        renderItems();
-        document.getElementById('productSearchInput').value = '';
-        document.getElementById('productSuggestions').classList.add('hidden');
-        selectedProductSuggestion = null;
-        toast(`Added ${product.name}`, 'success');
     }
 
     // Items rendering and totals
@@ -345,12 +335,12 @@
         }
         tbody.innerHTML = currentItems.map((item, idx) => `
             <tr data-idx="${idx}">
-                <td>${idx+1}</td>
-                <td><strong>${item.name}</strong><br><small>${item.barcode}</small></td>
-                <td><div class="qty-control"><button class="qty-dec" data-idx="${idx}">-</button><input type="number" class="qty-val" data-idx="${idx}" value="${item.qty}" min="1" style="width:55px;text-align:center;"><button class="qty-inc" data-idx="${idx}">+</button></div></td>
-                <td>${settings.currency}${item.price}</td>
-                <td>${settings.currency}${(item.price * item.qty).toFixed(2)}</td>
-                <td><button class="remove-item" data-idx="${idx}"><i class="fas fa-trash-alt"></i></button></td>
+                <td>${idx+1}侧
+                <td><strong>${item.name}</strong><br><small>${item.barcode}</small>侧
+                <td><div class="qty-control"><button class="qty-dec" data-idx="${idx}">-</button><input type="number" class="qty-val" data-idx="${idx}" value="${item.qty}" min="1" style="width:55px;text-align:center;"><button class="qty-inc" data-idx="${idx}">+</button></div>侧
+                <td>${settings.currency}${item.price}侧
+                <td>${settings.currency}${(item.price * item.qty).toFixed(2)}侧
+                <td><button class="remove-item" data-idx="${idx}"><i class="fas fa-trash-alt"></i></button>侧
             </tr>
         `).join('');
         // attach events
@@ -436,10 +426,10 @@
         if (scanBar) scanBar.classList.remove('active');
     }
 
-    // Customer, Workers, Settings, History (simplified but working)
+    // Customer, Workers, Settings, History (same as working version)
     async function loadCustomers() { try { const c = await api('getCustomers'); document.getElementById('customersList').innerHTML = c.map(c => `<div class="border-b py-2"><strong>${c.name}</strong><br>${c.phone}<br>${c.totalInvoices} invoices · ${settings.currency}${c.totalSpent}</div>`).join(''); } catch(e){ toast(e.message,'error'); } }
-    async function loadHistory() { try { const inv = await api('getInvoices',{limit:100}); document.getElementById('historyTbody').innerHTML = inv.map(i => `<tr><td>${i.invoiceId}</td><td>${i.date}</td><td>${i.customerName}</td><td>${settings.currency}${i.total}</td><td>${i.worker||'-'}</td><td><button class="printHistoryBtn btn btn-outline text-xs" data-id="${i.invoiceId}">Print</button></td></tr>`).join(''); document.querySelectorAll('.printHistoryBtn').forEach(btn => btn.onclick = () => printInvoiceById(btn.dataset.id)); } catch(e){ toast(e.message,'error'); } }
-    async function loadWorkers() { try { const stats = await api('getWorkerStats'); const tbody = document.getElementById('workersTbody'); tbody.innerHTML = stats.map(w => `<tr><td>${w.name}</td><td>${w.role}</td><td>${w.invoiceCount}</td><td>${settings.currency}${w.totalSales.toFixed(2)}</td><td>${w.status}</td><td><button class="editWorkerBtn" data-name="${w.name}" data-role="${w.role}" data-status="${w.status}">Edit</button> <button class="deleteWorkerBtn" data-name="${w.name}">Delete</button></td></tr>`).join(''); attachWorkerEvents(); } catch(e){ toast(e.message,'error'); } }
+    async function loadHistory() { try { const inv = await api('getInvoices',{limit:100}); document.getElementById('historyTbody').innerHTML = inv.map(i => `<tr><td style="font-size:0.8rem;">${i.invoiceId}侧<td>${i.date}</td><td>${i.customerName}</td><td>${settings.currency}${i.total}</td><td>${i.worker||'-'}</td><td><button class="printHistoryBtn btn btn-outline text-xs" data-id="${i.invoiceId}">Print</button></td>`).join(''); document.querySelectorAll('.printHistoryBtn').forEach(btn => btn.onclick = () => printInvoiceById(btn.dataset.id)); } catch(e){ toast(e.message,'error'); } }
+    async function loadWorkers() { try { const stats = await api('getWorkerStats'); const tbody = document.getElementById('workersTbody'); tbody.innerHTML = stats.map(w => `<tr><td>${w.name}</td><td>${w.role}</td><td>${w.invoiceCount}</td><td>${settings.currency}${w.totalSales.toFixed(2)}</td><td>${w.status}</td><td><button class="editWorkerBtn" data-name="${w.name}" data-role="${w.role}" data-status="${w.status}">Edit</button> <button class="deleteWorkerBtn" data-name="${w.name}">Delete</button></td>`).join(''); attachWorkerEvents(); } catch(e){ toast(e.message,'error'); } }
     function attachWorkerEvents() { document.querySelectorAll('.editWorkerBtn').forEach(btn => btn.onclick = () => { let oldName=btn.dataset.name; let newName=prompt('New name',oldName); let role=prompt('Role',btn.dataset.role); let status=prompt('Status',btn.dataset.status); api('updateWorker',{oldName, newName:newName||oldName, role, status}).then(()=>{ toast('Updated'); loadWorkers(); loadWorkersSelect(); }); }); document.querySelectorAll('.deleteWorkerBtn').forEach(btn => btn.onclick = () => { if(confirm('Delete?')) api('deleteWorker',{name:btn.dataset.name}).then(()=>{ toast('Deleted'); loadWorkers(); loadWorkersSelect(); }); }); }
     async function loadWorkersSelect() { const workers = await api('getWorkers'); const sel = document.getElementById('workerSelect'); if(sel) sel.innerHTML = workers.map(w => `<option value="${w.name}">${w.name} (${w.role})</option>`).join(''); }
     async function loadSettings() { try { const s = await api('getSettings'); settings = s; document.getElementById('settingsForm').innerHTML = `<div><label>Store Name</label><input id="storeName" value="${s.storeName.replace(/"/g,'&quot;')}"></div><div><label>Phone</label><input id="storePhone" value="${s.storePhone.replace(/"/g,'&quot;')}"></div><div><label>Address</label><input id="storeAddress" value="${s.storeAddress.replace(/"/g,'&quot;')}"></div><div><label>Tax (%)</label><input id="taxRate" value="${s.taxRate}"></div><div><label>Currency</label><input id="currency" value="${s.currency}"></div><div><label>Next Invoice #</label><input id="nextInvoiceNum" value="${s.nextInvoiceNum}"></div><div><label>Thank You Msg</label><textarea id="thankYouMsg">${s.thankYouMsg.replace(/"/g,'&quot;')}</textarea></div>`; } catch(e){ toast(e.message,'error'); } }
@@ -481,8 +471,8 @@
             loadHistory();
         } catch(e){ toast(e.message,'error'); }
     }
-    async function printInvoiceById(id) { try { let inv = await api('getInvoiceById',{invoiceId:id}); let s = await api('getSettings'); let win = window.open('','_blank'); win.document.write(`<!DOCTYPE html><html><head><title>Print Invoice</title><style>body{font-family:monospace;padding:0.5in;}</style></head><body onload="window.print();window.close();"><div><h2>${s.storeName}</h2><p>${s.storeAddress||''}</p><hr><p>Invoice: ${inv.invoiceId}<br>Date: ${inv.date}<br>Customer: ${inv.customerName}<br>Worker: ${inv.worker||'-'}</p><table border="1"><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>${inv.items.map(it=>`<tr><td>${it.name}</td><td>${it.qty}</td><td>${s.currency}${it.price}</td><td>${s.currency}${it.qty*it.price}</td></tr>`).join('')}</tbody></table><p>Subtotal: ${s.currency}${inv.subtotal}<br>Discount: ${s.currency}${inv.discount}<br>Tax: ${s.currency}${inv.tax}<br><strong>Total: ${s.currency}${inv.total}</strong></p><p>${s.thankYouMsg}</p></div></body></html>`); win.document.close(); } catch(e){ toast(e.message,'error'); } }
-    function resetForm() { currentItems = []; renderItems(); document.getElementById('custName').value = ''; document.getElementById('custPhone').value = ''; document.getElementById('received').value = '0'; document.getElementById('discountValue').value = '0'; document.getElementById('discountType').value = 'percent'; document.getElementById('repeatCustomerBadge').innerHTML = ''; document.getElementById('productSearchInput').value = ''; document.getElementById('productSuggestions').classList.add('hidden'); selectedProductSuggestion = null; recalcTotals(); }
+    async function printInvoiceById(id) { try { let inv = await api('getInvoiceById',{invoiceId:id}); let s = await api('getSettings'); let win = window.open('','_blank'); win.document.write(`<!DOCTYPE html><html><head><title>Print Invoice</title><style>body{font-family:monospace;padding:0.5in;}</style></head><body onload="window.print();window.close();"><div><h2>${s.storeName}</h2><p>${s.storeAddress||''}</p><hr><p>Invoice: ${inv.invoiceId}<br>Date: ${inv.date}<br>Customer: ${inv.customerName}<br>Worker: ${inv.worker||'-'}</p><table border="1"><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>${inv.items.map(it=>`<tr><td>${it.name}</td><td>${it.qty}</td><td>${s.currency}${it.price}</td><td>${s.currency}${it.qty*it.price}</td>`).join('')}</tbody></table><p>Subtotal: ${s.currency}${inv.subtotal}<br>Discount: ${s.currency}${inv.discount}<br>Tax: ${s.currency}${inv.tax}<br><strong>Total: ${s.currency}${inv.total}</strong></p><p>${s.thankYouMsg}</p></div></body></html>`); win.document.close(); } catch(e){ toast(e.message,'error'); } }
+    function resetForm() { currentItems = []; renderItems(); document.getElementById('custName').value = ''; document.getElementById('custPhone').value = ''; document.getElementById('received').value = '0'; document.getElementById('discountValue').value = '0'; document.getElementById('discountType').value = 'percent'; document.getElementById('repeatCustomerBadge').innerHTML = ''; document.getElementById('productSearchInput').value = ''; document.getElementById('productSuggestions').classList.add('hidden'); recalcTotals(); }
     async function loadInvoiceData() { try { let [p,s] = await Promise.all([api('getProducts'), api('getSettings')]); products = p; settings = s; let year = new Date().getFullYear(); let invNo = document.getElementById('invoiceNo'); if(invNo) invNo.value = `INV-${year}-${String(settings.nextInvoiceNum||1).padStart(4,'0')}`; let invDate = document.getElementById('invoiceDate'); if(invDate) invDate.value = new Date().toISOString().slice(0,10); let tax = document.getElementById('taxRate'); if(tax) tax.value = settings.taxRate||0; } catch(e){ toast(e.message,'error'); } }
 
     // Modal functions
@@ -516,7 +506,6 @@
     document.getElementById('searchProduct').addEventListener('input', loadInventory);
     document.getElementById('scanTrigger').onclick = startScanner;
     document.getElementById('stopScannerBtn').onclick = stopScanner;
-    document.getElementById('addSelectedBtn').onclick = addSelectedProduct;
     document.getElementById('saveInvoiceBtn').onclick = saveInvoice;
     document.getElementById('resetBtn').onclick = resetForm;
     document.getElementById('printInvoiceBtn').onclick = () => { if(currentItems.length) saveInvoice(); else toast('No items','error'); };
