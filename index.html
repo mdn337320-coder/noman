@@ -88,30 +88,25 @@
     </aside>
     <main class="main">
         <div class="top-bar"><h1 class="page-title"><i class="fas fa-store"></i> UAN Store</h1><select id="workerSelect" class="worker-select"><option>Manager</option><option>Cashier</option></select></div>
-
         <!-- Dashboard Tab -->
         <div id="dashboardTab" class="tab-content">
             <div class="stats-grid" id="statsGrid"></div>
             <div class="card"><div class="card-title"><i class="fas fa-chart-line"></i> Weekly Revenue</div><canvas id="revenueChart" height="200"></canvas></div>
             <div class="grid md:grid-cols-2 gap-6"><div class="card"><div class="card-title"><i class="fas fa-exclamation-triangle"></i> Low Stock Items</div><div id="lowStockList"></div></div><div class="card"><div class="card-title"><i class="fas fa-clock"></i> Recent Invoices</div><div id="recentInvoices"></div></div></div>
         </div>
-
-        <!-- Inventory Tab -->
         <div id="inventoryTab" class="tab-content hidden">
             <div class="card"><div class="card-title"><i class="fas fa-boxes"></i> Manage Products</div>
                 <div style="display:flex; gap:0.5rem; margin-bottom:1rem;"><input type="text" id="searchProduct" placeholder="🔍 Search by name or barcode" style="flex:1"><button id="addProductBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Add Product</button></div>
                 <div class="overflow-x-auto"><table class="products-table"><thead><tr><th>Barcode</th><th>Image</th><th>Name</th><th>Stock</th><th>Price</th><th>Actions</th></tr></thead><tbody id="productsTbody"></tbody></table></div>
             </div>
         </div>
-
-        <!-- Invoice Tab -->
         <div id="invoiceTab" class="tab-content hidden">
             <div class="card"><div class="card-title"><i class="fas fa-file-invoice"></i> Create Invoice</div>
                 <div class="invoice-grid">
                     <div>
                         <div class="card" style="margin-bottom:1rem;"><div class="card-title">Bill to</div><div class="form-row" style="display:flex; gap:1rem;"><input type="text" id="custName" placeholder="Customer name" style="flex:1"><input type="text" id="custPhone" placeholder="Phone" style="flex:1"></div><div id="repeatCustomerBadge"></div></div>
                         <div class="card"><div class="card-title">Add products</div><div id="scanTrigger" class="scan-bar"><i class="fas fa-camera"></i><p>Tap to scan (stays open)</p></div><div id="scannerContainer" class="scanner-container" style="display:none;"></div><div class="scanner-control" id="scannerControl" style="display:none; text-align:right;"><button id="stopScannerBtn" style="background:var(--danger); color:white; border:none; padding:0.3rem 1rem; border-radius:2rem;">Close scanner</button></div><select id="manualProductSelect" style="width:100%; margin-top:1rem;"><option value="">-- Choose product --</option></select><button id="addManualBtn" style="width:100%; margin-top:0.5rem;" class="btn btn-outline">+ Add selected</button></div>
-                        <div class="card"><div class="card-title">Items</div><div class="overflow-x-auto"><table class="items-table"><thead><tr><th>#</th><th>Product</th><th>Qty</th><th>Price</th><th>Total</th><th></th></tr></thead><tbody id="itemsBody"></tbody></table></div></div>
+                        <div class="card"><div class="card-title">Items</div><div class="overflow-x-auto"><table class="items-table"><thead><tr><th>#</th><th>Product</th><th>Qty</th><th>Price</th><th>Total</th><th></th></td></thead><tbody id="itemsBody"></tbody></table></div></div>
                     </div>
                     <div class="summary-card">
                         <div class="card-title">Order summary</div>
@@ -131,14 +126,8 @@
                 </div>
             </div>
         </div>
-
-        <!-- History Tab -->
-        <div id="historyTab" class="tab-content hidden"><div class="card"><div class="card-title">All Invoices</div><div class="overflow-x-auto"><table class="products-table"><thead><tr><th>Invoice #</th><th>Date</th><th>Customer</th><th>Total</th><th>Actions</th></table></thead><tbody id="historyTbody"></tbody></table></div></div></div>
-
-        <!-- Customers Tab -->
+        <div id="historyTab" class="tab-content hidden"><div class="card"><div class="card-title">All Invoices</div><div class="overflow-x-auto"><table class="products-table"><thead><tr><th>Invoice #</th><th>Date</th><th>Customer</th><th>Total</th><th>Actions</th></tr></thead><tbody id="historyTbody"></tbody></table></div></div></div>
         <div id="customersTab" class="tab-content hidden"><div class="card"><div class="card-title">Customers</div><div style="display:flex; gap:0.5rem; margin-bottom:1rem;"><input type="text" id="searchCustomer" placeholder="Search by phone or name" style="flex:1"><button id="refreshCustomersBtn" class="btn btn-outline">Refresh</button></div><div id="customersList"></div></div></div>
-
-        <!-- Settings Tab -->
         <div id="settingsTab" class="tab-content hidden">
             <div class="card"><div class="card-title">Store Settings</div><div id="settingsForm"></div>
                 <div style="margin-top:1rem; display:flex; gap:0.5rem;"><button id="saveSettingsBtn" class="btn btn-primary">Save Settings</button><button id="testConnectionBtn" class="btn btn-outline">🔌 Test Connection</button></div>
@@ -151,20 +140,26 @@
 
 <script>
     // ==================== CONFIGURATION ====================
-    // ⚠️ REPLACE WITH YOUR ACTUAL DEPLOYED APPS SCRIPT URL
-    const API_URL = 'https://script.google.com/macros/s/AKfycby29O_HKpcUVikEdhYric88sL36-p10WKZOMU0e8OfWelvwYn-NAKLuXvVhn8oSa_E7uw/exec';
+    // ⚠️ REPLACE THIS URL WITH YOUR REDEPLOYED APPS SCRIPT URL ⚠️
+    const API_URL = 'https://script.google.com/macros/s/YOUR_NEW_URL_HERE/exec';
     const API_SECRET = 'UAN_STORE_SECRET_2026';
     let currentChart = null;
     let products = [], currentItems = [], scanner = null, settings = { currency: '৳', taxRate: 0, nextInvoiceNum: 1 };
 
-    // ==================== API – GET request to avoid CORS ====================
+    // ==================== API – GET request (no CORS preflight) ====================
     async function api(action, data = {}) {
         const payload = JSON.stringify({ action, secret: API_SECRET, ...data });
         const url = `${API_URL}?request=${encodeURIComponent(payload)}`;
         const res = await fetch(url);
-        const json = await res.json();
-        if (!json.success) throw new Error(json.error);
-        return json.data;
+        const text = await res.text();
+        try {
+            const json = JSON.parse(text);
+            if (!json.success) throw new Error(json.error);
+            return json.data;
+        } catch(e) {
+            console.error('Response:', text);
+            throw new Error(`Server error: ${text.substring(0, 100)}`);
+        }
     }
 
     // ==================== UTILITIES ====================
@@ -179,8 +174,9 @@
         const statusDiv = document.getElementById('connectionStatus');
         statusDiv.innerHTML = '<span style="color: #f59e0b;">Testing...</span>';
         try {
-            const stats = await api('getDashboardStats');
-            if (stats) {
+            const res = await fetch(API_URL);
+            const json = await res.json();
+            if (json.status) {
                 statusDiv.innerHTML = '<span style="color: #10b981;">✅ API connected! Ready to use.</span>';
                 toast('Connection successful', 'success');
             } else {
@@ -473,11 +469,8 @@
                     <p>${s.storeAddress || ''}</p>
                     <hr>
                     <p><strong>Invoice:</strong> ${inv.invoiceId}<br><strong>Date:</strong> ${inv.date}<br><strong>Customer:</strong> ${inv.customerName || 'Walk-in'}</p>
-                    <table>
-                        <thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
-                        <tbody>
-                            ${inv.items.map(it => `<tr><td>${it.name}</td><td>${it.qty}</td><td>${s.currency}${it.price}</td><td>${s.currency}${it.qty * it.price}</td></tr>`).join('')}
-                        </tbody>
+                    <td><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+                        <tbody>${inv.items.map(it => `<tr><td>${it.name}</td><td>${it.qty}</td><td>${s.currency}${it.price}</td><td>${s.currency}${it.qty * it.price}</td></tr>`).join('')}</tbody>
                     </table>
                     <div class="totals">
                         <div>Subtotal: ${s.currency}${inv.subtotal}</div>
