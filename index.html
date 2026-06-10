@@ -71,11 +71,6 @@
             .main { max-width: 100%; padding: 1.5rem; }
             .invoice-grid { grid-template-columns: 1fr; }
         }
-        @media print {
-            body * { visibility: hidden; }
-            .print-area, .print-area * { visibility: visible; }
-            .print-area { position: absolute; top: 0; left: 0; width: 100%; padding: 0.5in; }
-        }
     </style>
 </head>
 <body>
@@ -138,7 +133,7 @@
         </div>
 
         <!-- History Tab -->
-        <div id="historyTab" class="tab-content hidden"><div class="card"><div class="card-title">All Invoices</div><div class="overflow-x-auto"><table class="products-table"><thead><tr><th>Invoice #</th><th>Date</th><th>Customer</th><th>Total</th><th>Actions</th></tr></thead><tbody id="historyTbody"></tbody></table></div></div></div>
+        <div id="historyTab" class="tab-content hidden"><div class="card"><div class="card-title">All Invoices</div><div class="overflow-x-auto"><table class="products-table"><thead><tr><th>Invoice #</th><th>Date</th><th>Customer</th><th>Total</th><th>Actions</th></table></thead><tbody id="historyTbody"></tbody></table></div></div></div>
 
         <!-- Customers Tab -->
         <div id="customersTab" class="tab-content hidden"><div class="card"><div class="card-title">Customers</div><div style="display:flex; gap:0.5rem; margin-bottom:1rem;"><input type="text" id="searchCustomer" placeholder="Search by phone or name" style="flex:1"><button id="refreshCustomersBtn" class="btn btn-outline">Refresh</button></div><div id="customersList"></div></div></div>
@@ -153,15 +148,24 @@
     </main>
 </div>
 <div id="toast" class="toast"></div>
-<!-- Print modal area (hidden) -->
-<div id="printModal" style="display:none;"><div id="printContent" class="print-area"></div></div>
 
 <script>
     // ==================== CONFIGURATION ====================
+    // ⚠️ REPLACE WITH YOUR ACTUAL DEPLOYED APPS SCRIPT URL
     const API_URL = 'https://script.google.com/macros/s/AKfycby29O_HKpcUVikEdhYric88sL36-p10WKZOMU0e8OfWelvwYn-NAKLuXvVhn8oSa_E7uw/exec';
     const API_SECRET = 'UAN_STORE_SECRET_2026';
     let currentChart = null;
     let products = [], currentItems = [], scanner = null, settings = { currency: '৳', taxRate: 0, nextInvoiceNum: 1 };
+
+    // ==================== API – GET request to avoid CORS ====================
+    async function api(action, data = {}) {
+        const payload = JSON.stringify({ action, secret: API_SECRET, ...data });
+        const url = `${API_URL}?request=${encodeURIComponent(payload)}`;
+        const res = await fetch(url);
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error);
+        return json.data;
+    }
 
     // ==================== UTILITIES ====================
     function toast(msg, type = '') {
@@ -171,31 +175,12 @@
         setTimeout(() => el.className = 'toast', 3000);
     }
 
-    async function api(action, data = {}) {
-        const res = await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({ request: JSON.stringify({ action, secret: API_SECRET, ...data }) })
-        });
-        const text = await res.text();
-        try {
-            const json = JSON.parse(text);
-            if (!json.success) throw new Error(json.error);
-            return json.data;
-        } catch(e) {
-            console.error('API raw response:', text.substring(0, 500));
-            throw new Error(`Server error: ${text.substring(0, 100)}`);
-        }
-    }
-
     async function testConnection() {
         const statusDiv = document.getElementById('connectionStatus');
         statusDiv.innerHTML = '<span style="color: #f59e0b;">Testing...</span>';
         try {
-            const res = await fetch(API_URL);
-            const text = await res.text();
-            const json = JSON.parse(text);
-            if (json.status) {
+            const stats = await api('getDashboardStats');
+            if (stats) {
                 statusDiv.innerHTML = '<span style="color: #10b981;">✅ API connected! Ready to use.</span>';
                 toast('Connection successful', 'success');
             } else {
@@ -230,7 +215,7 @@
             products = await api('getProducts');
             const tbody = document.getElementById('productsTbody');
             tbody.innerHTML = products.map(p => `
-                <tr><td style="font-size:0.8rem;">${p.barcode}</td><td style="text-align:center">${p.imageUrl ? '<img src="'+p.imageUrl+'" width="40" height="40" style="object-fit:cover; border-radius:8px;">' : '-'}</td><td>${p.name}</td><td class="${p.stock <= p.minStock ? 'text-red-600 font-bold' : ''}">${p.stock}</td><td>৳${p.retailPrice}</td><td><button class="editStockBtn btn btn-outline text-xs" data-barcode="${p.barcode}">Edit Stock</button></td>
+                <tr><td style="font-size:0.8rem;">${p.barcode}侧<td style="text-align:center">${p.imageUrl ? '<img src="'+p.imageUrl+'" width="40" height="40" style="object-fit:cover; border-radius:8px;">' : '-'}侧<td>${p.name}侧<td class="${p.stock <= p.minStock ? 'text-red-600 font-bold' : ''}">${p.stock}侧<td>৳${p.retailPrice}侧<td><button class="editStockBtn btn btn-outline text-xs" data-barcode="${p.barcode}">Edit Stock</button>侧
             `).join('');
             document.querySelectorAll('.editStockBtn').forEach(btn => btn.onclick = async () => {
                 const newStock = prompt('Enter new stock quantity:');
@@ -244,7 +229,7 @@
         try {
             const invoices = await api('getInvoices', { limit: 100 });
             document.getElementById('historyTbody').innerHTML = invoices.map(i => `
-                <tr><td>${i.invoiceId}</td><td>${i.date}</td><td>${i.customerName}</td><td>৳${i.total}</td><td><button class="printHistoryBtn btn btn-outline text-xs" data-id="${i.invoiceId}">Print</button></td>
+                <tr><td style="font-size:0.8rem;">${i.invoiceId}侧<td>${i.date}侧<td>${i.customerName}侧<td>৳${i.total}侧<td><button class="printHistoryBtn btn btn-outline text-xs" data-id="${i.invoiceId}">Print</button>侧
             `).join('');
             document.querySelectorAll('.printHistoryBtn').forEach(btn => btn.onclick = () => printInvoiceById(btn.dataset.id));
         } catch(e) { toast(e.message, 'error'); }
@@ -299,16 +284,16 @@
 
     function renderItems() {
         const tbody = document.getElementById('itemsBody');
-        if (currentItems.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:1rem;">No items added</td></tr>'; recalcTotals(); return; }
+        if (currentItems.length === 0) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:1rem;">No items added<\/td><\/tr>'; recalcTotals(); return; }
         tbody.innerHTML = currentItems.map((item, idx) => `
             <tr data-idx="${idx}">
-                <td>${idx+1}</td>
-                <td><strong>${item.name}</strong><br><span style="font-size:0.7rem;">${item.barcode}</span></td>
-                <td><div class="qty-control"><button class="qty-btn" data-idx="${idx}" data-delta="-1">-</button><input type="number" class="qty-input" data-idx="${idx}" value="${item.qty}" min="1" step="1" style="width:55px; text-align:center;"><button class="qty-btn" data-idx="${idx}" data-delta="1">+</button></div></td>
-                <td>${settings.currency}${item.price}</td>
-                <td>${settings.currency}${(item.price * item.qty).toFixed(2)}</td>
-                <td><button class="delete-item" data-idx="${idx}"><i class="fas fa-trash-alt"></i></button></td>
-            </tr>
+                <td>${idx+1}<\/td>
+                <td><strong>${item.name}<\/strong><br><span style="font-size:0.7rem;">${item.barcode}<\/span><\/td>
+                <td><div class="qty-control"><button class="qty-btn" data-idx="${idx}" data-delta="-1">-<\/button><input type="number" class="qty-input" data-idx="${idx}" value="${item.qty}" min="1" step="1" style="width:55px; text-align:center;"><button class="qty-btn" data-idx="${idx}" data-delta="1">+<\/button><\/div><\/td>
+                <td>${settings.currency}${item.price}<\/td>
+                <td>${settings.currency}${(item.price * item.qty).toFixed(2)}<\/td>
+                <td><button class="delete-item" data-idx="${idx}"><i class="fas fa-trash-alt"><\/i><\/button><\/td>
+            <\/tr>
         `).join('');
         document.querySelectorAll('.qty-btn').forEach(btn => btn.onclick = () => {
             const idx = parseInt(btn.dataset.idx);
@@ -488,9 +473,12 @@
                     <p>${s.storeAddress || ''}</p>
                     <hr>
                     <p><strong>Invoice:</strong> ${inv.invoiceId}<br><strong>Date:</strong> ${inv.date}<br><strong>Customer:</strong> ${inv.customerName || 'Walk-in'}</p>
-                    <table><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>
-                        ${inv.items.map(it => `<tr><td>${it.name}</td><td>${it.qty}</td><td>${s.currency}${it.price}</td><td>${s.currency}${it.qty * it.price}</td></tr>`).join('')}
-                    </tbody></table>
+                    <table>
+                        <thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+                        <tbody>
+                            ${inv.items.map(it => `<tr><td>${it.name}</td><td>${it.qty}</td><td>${s.currency}${it.price}</td><td>${s.currency}${it.qty * it.price}</td></tr>`).join('')}
+                        </tbody>
+                    </table>
                     <div class="totals">
                         <div>Subtotal: ${s.currency}${inv.subtotal}</div>
                         <div>Discount: ${s.currency}${inv.discount}</div>
@@ -518,7 +506,6 @@
         recalcTotals();
     }
 
-    // ==================== LOAD INITIAL DATA FOR INVOICE TAB ====================
     async function loadInvoiceData() {
         try {
             const [allProducts, settingsData] = await Promise.all([api('getProducts'), api('getSettings')]);
@@ -533,7 +520,7 @@
         } catch(e) { toast(e.message, 'error'); }
     }
 
-    // ==================== TAB SWITCHING ====================
+    // ==================== TAB SWITCHING & EVENT BINDINGS ====================
     document.querySelectorAll('[data-tab]').forEach(btn => {
         btn.onclick = () => {
             const tab = btn.dataset.tab;
@@ -550,7 +537,6 @@
         };
     });
 
-    // ==================== EVENT BINDINGS ====================
     document.getElementById('addProductBtn').onclick = () => {
         const name = prompt('Product name');
         const price = parseFloat(prompt('Retail price'));
@@ -574,7 +560,7 @@
     document.getElementById('received').oninput = recalcTotals;
     window.addEventListener('beforeunload', () => stopScanner());
 
-    // ==================== INITIAL LOAD ====================
+    // Initial loads
     loadDashboard(); loadInventory(); loadHistory(); loadCustomers(); loadSettings();
     loadInvoiceData(); renderItems();
 </script>
